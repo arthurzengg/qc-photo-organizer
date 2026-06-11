@@ -6,7 +6,8 @@
 (function () {
   'use strict';
 
-  var V = 'v22';
+  var V = 'v23';
+  window.QC_VERSION = V; // 诊断时确认真机跑的是哪个版本
   var CONFIG_URL = 'https://haoyao-qc-hk.oss-cn-hongkong.aliyuncs.com/public/qc-config.json';
 
   function loadScript(src, cb) {
@@ -21,7 +22,7 @@
     loadScript('lib/aliyun-oss-sdk.min.js?' + V, function () {
       loadScript('lib/storage-oss.js?' + V, function () {
         loadScript('lib/storage.js?' + V, function () {
-          loadScript('supervisor.js?v9');
+          loadScript('supervisor.js?v10');
         });
       });
     });
