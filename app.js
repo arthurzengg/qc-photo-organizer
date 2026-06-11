@@ -193,15 +193,14 @@
     return map[(type || '').toLowerCase()] || '';
   }
 
-  // Whether the browser can likely render this file as an <img>. HEIC/HEIF are
-  // excluded — most desktop browsers cannot decode them (the file is still kept).
+  // Whether the browser can likely render this file as an <img>.
+  // HEIC/HEIF are included — iOS Safari decodes them natively. Desktop
+  // browsers that cannot decode HEIC will fire img.onerror and fall back.
   function isRenderable(file) {
     var t = (file.type || '').toLowerCase();
     var ext = extFromName(file.name);
-    if (t === 'image/heic' || t === 'image/heif') return false;
-    if (ext === 'heic' || ext === 'heif') return false;
     if (t.indexOf('image/') === 0) return true;
-    if (!t && ['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp'].indexOf(ext) !== -1) return true;
+    if (!t && ['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp', 'heic', 'heif'].indexOf(ext) !== -1) return true;
     return false;
   }
 
@@ -1469,6 +1468,23 @@
     window.addEventListener('drop', function (e) {
       if (!(e.target.closest && e.target.closest('.slot__drop, .attach-drop'))) e.preventDefault();
     });
+
+    // Fallback for browsers that cannot decode HEIC/HEIF (desktop Chrome/Firefox).
+    // iOS Safari handles HEIC natively; this only fires on unsupported browsers.
+    document.addEventListener('error', function (e) {
+      if (e.target.tagName !== 'IMG') return;
+      var dThumb = e.target.closest('.defect-item__thumb');
+      if (dThumb && !dThumb.classList.contains('defect-item__thumb--none')) {
+        dThumb.classList.add('defect-item__thumb--none');
+        dThumb.innerHTML = '<span>无法预览</span>';
+        return;
+      }
+      var aThumb = e.target.closest('.attach-item__thumb');
+      if (aThumb && !aThumb.classList.contains('attach-item__thumb--file')) {
+        aThumb.classList.add('attach-item__thumb--file');
+        aThumb.innerHTML = '<svg class="attach-item__icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6H6Zm7 1.5L18.5 9H13V3.5Z"/></svg>';
+      }
+    }, true);
 
     
     window.addEventListener('pagehide', function () {
