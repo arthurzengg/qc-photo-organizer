@@ -156,6 +156,9 @@
     .spin { width:42px; height:42px; border-radius:50%; border:4px solid var(--soft); border-top-color:var(--blue); animation:sp .8s linear infinite; }
     @keyframes sp { to { transform:rotate(360deg); } }
   </style>
+  <!-- 登录门：未登录前先隐藏页面，避免内容闪一下 -->
+  <style>html.qc-gate body{visibility:hidden}</style>
+  <script>document.documentElement.classList.add('qc-gate');window.QC_AUTH={roles:['supervisor'],title:'主管复检'};</script>
 </head>
 <body>
   <header>
@@ -227,6 +230,7 @@
   <div class="overlay" id="overlay"><div class="spin"></div></div>
   <div class="toast" id="toast"></div>
 
+  <script defer src="auth.js?v=1"></script>
   <script defer src="lib/jszip.min.js"></script>
   <script defer src="boot-supervisor.js?v=1"></script>
 </body>

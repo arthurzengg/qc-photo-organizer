@@ -1,0 +1,20 @@
+{
+  "_说明": "主管登录账号（质检员页面无需登录，只有主管复检页面要密码）。密码不存明文，只存 SHA-256(salt + ':' + 密码) 的哈希。要新增/修改账号，用 account-tool.html 生成下面的条目再粘贴进来，提交到 GitHub 即可（GitHub raw 缓存约几分钟后生效）。role 用 supervisor（主管）。",
+  "_默认账号": "admin/boss8888、manager/super888（都是主管）。上线前请改掉。",
+  "users": [
+    {
+      "username": "admin",
+      "name": "王主管",
+      "role": "supervisor",
+      "salt": "s9a0b1c2",
+      "hash": "74b9394098bc9b99c99045f743747286faabdaec15cfaa3b2c30df79621befce"
+    },
+    {
+      "username": "manager",
+      "name": "李主管",
+      "role": "supervisor",
+      "salt": "sm2x9y1z",
+      "hash": "1a0470d398678bc1429ec8ff42c2db84df995db801578d84ac10ecd7a1319227"
+    }
+  ]
+}

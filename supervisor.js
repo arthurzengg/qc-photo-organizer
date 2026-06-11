@@ -624,6 +624,7 @@
     L.push('编号,' + csvEscape(u.unit));
     L.push('原始质检员,' + csvEscape(u.inspector || ''));
     L.push('主管复核结论,' + csvEscape(u.verdict || '未填写'));
+    L.push('复核主管,' + csvEscape((window.QCAuth && QCAuth.user && QCAuth.user.name) || ''));
     L.push('主管复核备注,' + csvEscape(u.note || ''));
     L.push('复核时间,' + csvEscape(fmtNow()));
     L.push('原始照片数,' + u.imageEntries.length);

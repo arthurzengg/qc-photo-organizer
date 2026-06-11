@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>账号生成工具 · 质检系统</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <style>
+    :root { --blue:#1d4ed8; --line:#e5e7eb; --ink:#0f172a; --muted:#64748b; --bg:#f1f5f9; }
+    * { box-sizing:border-box; }
+    body { margin:0; font:15px/1.6 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif; color:var(--ink); background:var(--bg); }
+    header { background:var(--blue); color:#fff; padding:14px 18px; display:flex; align-items:center; gap:10px; }
+    header h1 { font-size:17px; margin:0; flex:1; }
+    header a { color:#fff; text-decoration:none; background:rgba(255,255,255,.18); padding:7px 12px; border-radius:8px; font-size:14px; }
+    .wrap { max-width:640px; margin:0 auto; padding:20px 16px 60px; }
+    .card { background:#fff; border:1px solid var(--line); border-radius:14px; padding:20px; margin-bottom:16px; }
+    .card h2 { margin:0 0 4px; font-size:16px; }
+    .card p.sub { margin:0 0 14px; color:var(--muted); font-size:13px; }
+    label { display:block; font-size:13px; color:var(--muted); margin:12px 0 5px; }
+    input, select { width:100%; padding:10px 12px; border:1.5px solid var(--line); border-radius:9px; font-size:15px; background:#fff; color:var(--ink); }
+    input:focus, select:focus { outline:none; border-color:var(--blue); box-shadow:0 0 0 3px #eff6ff; }
+    .row { display:flex; gap:12px; }
+    .row > div { flex:1; }
+    .btn { margin-top:18px; width:100%; padding:12px; border:0; border-radius:10px; background:var(--blue); color:#fff; font-size:15px; font-weight:600; cursor:pointer; }
+    .btn:hover { background:#1e40af; }
+    .out { display:none; }
+    .out.on { display:block; }
+    pre { background:#0f172a; color:#e2e8f0; border-radius:10px; padding:14px; overflow:auto; font-size:13px; line-height:1.5; margin:10px 0 0; }
+    .copy { margin-top:10px; padding:9px 14px; border:1.5px solid var(--blue); background:#fff; color:var(--blue); border-radius:9px; font-size:14px; font-weight:600; cursor:pointer; }
+    .copy:hover { background:#eff6ff; }
+    .steps { font-size:13.5px; color:#334155; }
+    .steps li { margin:6px 0; }
+    code { background:#eef2ff; color:#1e40af; padding:1px 6px; border-radius:5px; font-size:13px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>账号生成工具</h1>
+    <a href="index.html">← 返回</a>
+  </header>
+
+  <main class="wrap">
+    <div class="card">
+      <h2>生成一个账号</h2>
+      <p class="sub">填好后点「生成」，把下面的 JSON 块粘进 <code>users.json</code> 的 <code>users</code> 数组里，提交到 GitHub 即可。密码本身不会被保存，只保存哈希值。</p>
+
+      <label for="f-user">用户名（登录用，建议用拼音/字母）</label>
+      <input id="f-user" type="text" placeholder="例如：zhangsan" autocapitalize="off" autocorrect="off" />
+
+      <label for="f-name">显示姓名（会自动带进记录）</label>
+      <input id="f-name" type="text" placeholder="例如：张三" />
+
+      <div class="row">
+        <div>
+          <label for="f-role">角色</label>
+          <select id="f-role">
+            <option value="inspector">质检员 inspector</option>
+            <option value="supervisor">主管 supervisor</option>
+          </select>
+        </div>
+        <div>
+          <label for="f-pass">密码</label>
+          <input id="f-pass" type="text" placeholder="设置一个密码" />
+        </div>
+      </div>
+
+      <button class="btn" id="gen">生成 JSON 条目</button>
+
+      <div class="out" id="out">
+        <pre id="json"></pre>
+        <button class="copy" id="copy">复制</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>怎么用</h2>
+      <ol class="steps">
+        <li>每个员工填一次，点「生成」，复制 JSON 条目。</li>
+        <li>打开 GitHub 仓库里的 <code>users.json</code>，把条目加进 <code>users</code> 数组（条目之间用逗号隔开）。</li>
+        <li>提交（Commit）。GitHub raw 缓存约几分钟后，登录页面即可用新账号。</li>
+        <li>改密码＝重新生成同一用户名的条目，替换旧的即可。删除账号＝删掉对应条目。</li>
+      </ol>
+    </div>
+  </main>
+
+  <script>
+    function sha256Hex(text) {
+      var bytes = new TextEncoder().encode(text);
+      return crypto.subtle.digest('SHA-256', bytes).then(function (buf) {
+        return Array.prototype.map.call(new Uint8Array(buf), function (b) {
+          return ('0' + b.toString(16)).slice(-2);
+        }).join('');
+      });
+    }
+    function randSalt() {
+      var a = new Uint8Array(6);
+      crypto.getRandomValues(a);
+      return Array.prototype.map.call(a, function (b) { return ('0' + b.toString(16)).slice(-2); }).join('');
+    }
+    var outEl = document.getElementById('out');
+    var jsonEl = document.getElementById('json');
+    document.getElementById('gen').addEventListener('click', function () {
+      var username = document.getElementById('f-user').value.trim();
+      var name = document.getElementById('f-name').value.trim();
+      var role = document.getElementById('f-role').value;
+      var pass = document.getElementById('f-pass').value;
+      if (!username || !name || !pass) { alert('用户名、姓名、密码都要填'); return; }
+      var salt = randSalt();
+      sha256Hex(salt + ':' + pass).then(function (hash) {
+        var obj = { username: username, name: name, role: role, salt: salt, hash: hash };
+        jsonEl.textContent = JSON.stringify(obj, null, 2);
+        outEl.classList.add('on');
+      });
+    });
+    document.getElementById('copy').addEventListener('click', function () {
+      navigator.clipboard.writeText(jsonEl.textContent).then(function () {
+        var b = document.getElementById('copy'); var t = b.textContent;
+        b.textContent = '已复制 ✓'; setTimeout(function () { b.textContent = t; }, 1500);
+      });
+    });
+  </script>
+</body>
+</html>
