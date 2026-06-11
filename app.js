@@ -981,6 +981,7 @@
     QCStorage.upload({
       bytes: res.bytes,
       blob: res.blob,
+      onProgress: function (done, total) { showToast('云端上传中… ' + done + '/' + total + ' 片'); },
       folder: res.folderBase,
       subfolder: '质检员首次检查',
       model: model,
@@ -1000,6 +1001,7 @@
       // 代码版本一并显示 —— 可确认手机跑的是不是新代码（旧缓存是上次排查的干扰项）。
       window.alert('❌ 云端上传失败（本地 ZIP 已保存）。\n\n错误信息：\n' + (err && err.message ? err.message : err) +
                    '\n\n耗时约 ' + Math.round((Date.now() - t0) / 1000) + ' 秒' +
+                   '\nZIP 大小：' + (res.bytes ? (res.bytes.length / 1048576).toFixed(1) + ' MB' : '未知') +
                    '\n代码版本：' + (window.QC_VERSION || '未知'));
     });
   }

@@ -16,7 +16,7 @@
 </head>
 <body>
 <h1>产品质检拍照整理 · 上传诊断</h1>
-<p>这一页会自动跑 3 个测试,把每一步结果直接显示出来。截图发回即可。</p>
+<p>这一页会自动跑 6 个测试,把每一步结果直接显示出来。截图发回即可。</p>
 
 <h2>0. 这是哪个浏览器(userAgent)</h2>
 <pre id="ua">读取中…</pre>
@@ -36,12 +36,15 @@
 <h2>5. 复刻正式 App:真实 JSZip + 线上 storage-oss.js 的 upload()</h2>
 <pre id="t5" class="pend">等第 4 步完成后开始…</pre>
 
+<h2>6. 分片上传(大 ZIP 的新路径,超过 8MB 自动分片)</h2>
+<pre id="t6" class="pend">等第 5 步完成后开始…</pre>
+
 <script src="lib/aliyun-oss-sdk.min.js"></script>
 <script src="lib/jszip.min.js"></script>
 <script>
 (function () {
   'use strict';
-  var CONFIG_URL = 'https://haoyao-qc.oss-cn-shenzhen.aliyuncs.com/public/qc-config.json';
+  var CONFIG_URL = 'https://haoyao-qc-hk.oss-cn-hongkong.aliyuncs.com/public/qc-config.json';
   var $ = function (id) { return document.getElementById(id); };
   function set(id, cls, txt) { var e = $(id); e.className = cls; e.textContent = txt; }
 
@@ -68,7 +71,7 @@
   //    但只要"能拿到 HTTP 响应"就说明预检通过、PUT 方法可达。若变成 network error,
   //    说明这个浏览器把预检/PUT 拦了。
   function runT2() {
-    var url = 'https://haoyao-qc.oss-cn-shenzhen.aliyuncs.com/records/nettest-fetch.txt';
+    var url = 'https://haoyao-qc-hk.oss-cn-hongkong.aliyuncs.com/records/nettest-fetch.txt';
     var t0 = Date.now();
     fetch(url, { method: 'PUT', headers: { 'Content-Type': 'text/plain' }, body: 'hi' })
       .then(function (r) {
@@ -182,15 +185,45 @@
         }).then(function (r) {
           set('t5', 'ok', '✅ 复刻 App 路径上传成功!path=' + (r && r.path) +
               '  耗时 ' + (Date.now() - t0) + 'ms\n→ 那 App 失败就不是代码本身,而是真机当时的状态/缓存。');
+          runT6();
         }).catch(function (e) {
           set('t5', 'bad', '❌ 复刻 App 路径上传失败(这就重现了 App 的 bug!):\n' +
               (e && e.message ? e.message : e) + '\n耗时 ' + (Date.now() - t0) + 'ms');
+          runT6();
         });
       };
       s.onerror = function () { set('t5', 'bad', '❌ storage-oss.js 加载失败'); };
       document.body.appendChild(s);
     }).catch(function (e) {
       set('t5', 'bad', '❌ JSZip 打包失败:' + (e && e.message ? e.message : e));
+    });
+  }
+
+  // 6) 分片上传探针:17MB 字节(3 片)走 upload() 的 multipart 路径 ——
+  //    正式 App 里大 ZIP 走的就是这条路。复用第 5 步加载的线上 storage-oss.js。
+  function runT6() {
+    if (!window.QCStorage || !window.QCStorage.configured()) {
+      set('t6', 'bad', '跳过:QCStorage 没就绪(看第 5 步)');
+      return;
+    }
+    var size = 17 * 1024 * 1024;
+    var u8 = new Uint8Array(size);
+    for (var i = 0; i < size; i += 4096) u8[i] = (i / 4096) & 255;
+    var t0 = Date.now();
+    var lines = ['17MB 分片上传中…(8MB/片,共 3 片)'];
+    function render(cls) { set('t6', cls || 'pend', lines.join('\n')); }
+    render();
+    window.QCStorage.upload({
+      bytes: u8, folder: 'NETTEST-MP-01', model: 'NETTEST', unit: '01',
+      inspector: 'diag', photoCount: 0, defectCount: 0,
+      defectSurfaceCount: 0, attachCount: 0, notes: [],
+      onProgress: function (done, total) { lines.push('第 ' + done + '/' + total + ' 片完成'); render(); }
+    }).then(function (r) {
+      lines.push('✅ 分片上传成功!path=' + (r && r.path) + '  耗时 ' + Math.round((Date.now() - t0) / 1000) + ' 秒');
+      render('ok');
+    }).catch(function (e) {
+      lines.push('❌ 分片上传失败:' + (e && e.message ? e.message : e) + '  耗时 ' + Math.round((Date.now() - t0) / 1000) + ' 秒');
+      render('bad');
     });
   }
 })();

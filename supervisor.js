@@ -707,7 +707,10 @@
       var blob = new Blob([u8], { type: 'application/zip' });
       triggerDownload(blob, reportBase + '.zip');
       if (window.QCStorage && QCStorage.configured()) {
-        QCStorage.upload({ bytes: u8, blob: blob, folder: reportBase, subfolder: '最终审查' })
+        QCStorage.upload({
+          bytes: u8, blob: blob, folder: reportBase, subfolder: '最终审查',
+          onProgress: function (done, total) { toast('云端上传中… ' + done + '/' + total + ' 片'); },
+        })
           .then(function () { toast('已同步到云端'); })
           .catch(function (err) { console.error('云端上传失败', err); });
       }
