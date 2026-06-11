@@ -42,7 +42,7 @@ jobs:
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
         run: |
-          npx --yes netlify-cli deploy \
+          npx --yes netlify-cli@17 deploy \
             --dir . \
             --prod \
             --site "$NETLIFY_SITE_ID" \
