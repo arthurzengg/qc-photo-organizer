@@ -161,8 +161,10 @@
     zip.file('00-正面.jpg', photo);
     zip.file('质检备注.csv', '部位,有无瑕疵\n正面,无\n');
 
-    zip.generateAsync({ type: 'blob' }).then(function (zipBlob) {
-      set('t5', 'pend', 'ZIP 打好了(' + Math.round(zipBlob.size / 1024) + 'KB),' +
+    // 与正式 App 一致:uint8array 原始字节直接交给 fetch 上传(不经过 Blob,
+    // 避免 iOS 的 "The I/O read operation failed")。
+    zip.generateAsync({ type: 'uint8array' }).then(function (u8) {
+      set('t5', 'pend', 'ZIP 打好了(' + Math.round(u8.length / 1024) + 'KB),' +
           '现在动态加载线上 storage-oss.js 并调用 upload()…');
       var s = document.createElement('script');
       s.src = 'lib/storage-oss.js?nettest=' + Date.now(); // 绕过缓存,强制取最新
@@ -174,7 +176,7 @@
         }
         var t0 = Date.now();
         window.QCStorage.upload({
-          blob: zipBlob, folder: 'NETTEST-T-01', model: 'NETTEST', unit: '01',
+          bytes: u8, folder: 'NETTEST-T-01', model: 'NETTEST', unit: '01',
           inspector: 'diag', photoCount: 1, defectCount: 0,
           defectSurfaceCount: 0, attachCount: 0, notes: []
         }).then(function (r) {

@@ -866,10 +866,13 @@
 
     root.file('质检备注.csv', buildCsv(model, unit, inspector, partCount, defectPhotoCount, defectSurfaceCount, attachCount, features, test, rows));
 
-    // Use uint8array then wrap in a flat Blob — JSZip's native blob output is a
-    // composite Blob on iOS that triggers "The I/O read operation failed" on upload.
+    // uint8array output: the raw bytes go straight to fetch() for the cloud
+    // upload — any Blob round-trip (construct + read back) can throw
+    // "The I/O read operation failed" on iOS WebKit. The Blob wrapper exists
+    // only for the local download link.
     return zip.generateAsync({ type: 'uint8array', compression: 'STORE' }).then(function (u8) {
       return {
+        bytes: u8,
         blob: new Blob([u8], { type: 'application/zip' }),
         folderBase: folderBase, count: partCount,
         defectCount: defectPhotoCount, defectSurfaceCount: defectSurfaceCount, attachCount: attachCount,
@@ -976,6 +979,7 @@
     showToast('正在上传云端…');
     var t0 = Date.now();
     QCStorage.upload({
+      bytes: res.bytes,
       blob: res.blob,
       folder: res.folderBase,
       subfolder: '质检员首次检查',
@@ -993,8 +997,10 @@
     }).catch(function (err) {
       console.error(err);
       // 临时诊断:用 alert 弹出确切错误,方便截图反馈。问题定位后会改回轻提示。
+      // 代码版本一并显示 —— 可确认手机跑的是不是新代码（旧缓存是上次排查的干扰项）。
       window.alert('❌ 云端上传失败（本地 ZIP 已保存）。\n\n错误信息：\n' + (err && err.message ? err.message : err) +
-                   '\n\n耗时约 ' + Math.round((Date.now() - t0) / 1000) + ' 秒');
+                   '\n\n耗时约 ' + Math.round((Date.now() - t0) / 1000) + ' 秒' +
+                   '\n代码版本：' + (window.QC_VERSION || '未知'));
     });
   }
 
