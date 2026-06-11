@@ -106,12 +106,22 @@
       '.qc-auth-card .go{width:100%;margin-top:14px;padding:12px;border:0;border-radius:10px;background:#1d4ed8;color:#fff;font-size:15px;font-weight:600;cursor:pointer;}' +
       '.qc-auth-card .go:hover{background:#1e40af;}' +
       '.qc-auth-card .go:disabled{background:#94a3b8;cursor:not-allowed;}' +
-      '.qc-auth-chip{position:fixed;top:8px;right:10px;z-index:50;display:flex;align-items:center;gap:8px;' +
-        'background:rgba(255,255,255,.92);border:1px solid rgba(15,23,42,.08);border-radius:999px;padding:5px 6px 5px 12px;' +
-        'box-shadow:0 2px 8px rgba(0,0,0,.12);font:13px/1 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;color:#0f172a;}' +
-      '.qc-auth-chip b{font-weight:600;}.qc-auth-chip .role{color:#64748b;}' +
-      '.qc-auth-chip button{border:0;background:#eef2ff;color:#1d4ed8;border-radius:999px;padding:5px 11px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;}' +
-      '.qc-auth-chip button:hover{background:#dbeafe;}';
+      '.qc-auth-chip{display:flex;align-items:center;gap:8px;border-radius:999px;padding:5px 6px 5px 12px;' +
+        'font:13px/1 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;}' +
+      '.qc-auth-chip b{font-weight:600;}' +
+      '.qc-auth-chip button{border:0;border-radius:999px;padding:5px 11px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;}' +
+      // docked inside the page header (default now): translucent, matches the blue bar
+      '.qc-auth-chip--dock{background:rgba(255,255,255,.18);color:#fff;flex-shrink:0;}' +
+      '.qc-auth-chip--dock .role{display:none;}' +  // 顶栏已写「主管」，这里不再重复
+      '.qc-auth-chip--dock b{display:inline-block;max-width:42vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:bottom;}' +
+      '.qc-auth-chip--dock button{background:rgba(255,255,255,.92);color:#1d4ed8;}' +
+      '.qc-auth-chip--dock button:hover{background:#fff;}' +
+      // floating fallback when the page has no <header>
+      '.qc-auth-chip--float{position:fixed;top:8px;right:10px;z-index:50;background:rgba(255,255,255,.92);' +
+        'border:1px solid rgba(15,23,42,.08);box-shadow:0 2px 8px rgba(0,0,0,.12);color:#0f172a;}' +
+      '.qc-auth-chip--float .role{color:#64748b;}' +
+      '.qc-auth-chip--float button{background:#eef2ff;color:#1d4ed8;}' +
+      '.qc-auth-chip--float button:hover{background:#dbeafe;}';
     var st = document.createElement('style');
     st.id = 'qc-auth-style';
     st.textContent = css;
@@ -183,10 +193,21 @@
     if (old) old.remove();
     var chip = document.createElement('div');
     chip.id = 'qc-auth-chip';
-    chip.className = 'qc-auth-chip';
     chip.innerHTML = '<span>👤 <b>' + esc(sess.name) + '</b> <span class="role">' +
       esc(ROLE_CN[sess.role] || sess.role) + '</span></span><button type="button" id="qc-auth-out">退出</button>';
-    document.body.appendChild(chip);
+    // 优先放进页面顶栏(避免悬浮框压住标题/返回链接);没有 header 才悬浮在右上角。
+    var header = document.querySelector('header');
+    if (header) {
+      chip.className = 'qc-auth-chip qc-auth-chip--dock';
+      header.style.flexWrap = 'wrap';
+      // 让标题用内容宽度参与换行计算并可收缩，这样窄屏时整块会自然换行而不是被裁切
+      var title = header.querySelector('h1');
+      if (title) { title.style.flexBasis = 'auto'; title.style.minWidth = '0'; }
+      header.appendChild(chip);
+    } else {
+      chip.className = 'qc-auth-chip qc-auth-chip--float';
+      document.body.appendChild(chip);
+    }
     document.getElementById('qc-auth-out').addEventListener('click', function () {
       if (!confirm('确定退出登录？')) return;
       clearSession();
