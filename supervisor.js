@@ -705,6 +705,11 @@
       return out.generateAsync({ type: 'blob', compression: 'STORE' });
     }).then(function (blob) {
       triggerDownload(blob, reportBase + '.zip');
+      if (window.QCStorage && QCStorage.configured()) {
+        QCStorage.upload({ blob: blob, folder: reportBase, subfolder: '最终审查' })
+          .then(function () { toast('已同步到云端'); })
+          .catch(function (err) { console.error('云端上传失败', err); });
+      }
       u.status = u.verdict || '已复核';
       // 终审出报告后,清掉本机暂存的草稿
       var doneDraft = u.draftKey ? idbDel(u.draftKey).catch(function () {}) : Promise.resolve();
