@@ -866,9 +866,12 @@
 
     root.file('质检备注.csv', buildCsv(model, unit, inspector, partCount, defectPhotoCount, defectSurfaceCount, attachCount, features, test, rows));
 
-    return zip.generateAsync({ type: 'blob', compression: 'STORE' }).then(function (blob) {
+    // Use uint8array then wrap in a flat Blob — JSZip's native blob output is a
+    // composite Blob on iOS that triggers "The I/O read operation failed" on upload.
+    return zip.generateAsync({ type: 'uint8array', compression: 'STORE' }).then(function (u8) {
       return {
-        blob: blob, folderBase: folderBase, count: partCount,
+        blob: new Blob([u8], { type: 'application/zip' }),
+        folderBase: folderBase, count: partCount,
         defectCount: defectPhotoCount, defectSurfaceCount: defectSurfaceCount, attachCount: attachCount,
       };
     });

@@ -700,8 +700,10 @@
     root.file('主管复检报告.csv', buildReportCsv(u, packCount));
 
     Promise.all(copyJobs).then(function () {
-      return out.generateAsync({ type: 'blob', compression: 'STORE' });
-    }).then(function (blob) {
+      // uint8array → flat Blob avoids iOS "The I/O read operation failed" on upload
+      return out.generateAsync({ type: 'uint8array', compression: 'STORE' });
+    }).then(function (u8) {
+      var blob = new Blob([u8], { type: 'application/zip' });
       triggerDownload(blob, reportBase + '.zip');
       if (window.QCStorage && QCStorage.configured()) {
         QCStorage.upload({ blob: blob, folder: reportBase, subfolder: '最终审查' })
