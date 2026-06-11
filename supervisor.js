@@ -398,9 +398,8 @@
     els.rvGallery.innerHTML = '<div class="empty">正在载入照片…</div>';
     var jobs = galEntries.map(function (e) {
       return u.zip.file(e.path).async('blob').then(function (blob) {
-        var renderable = ['heic', 'heif'].indexOf(extOf(e.name)) === -1;
-        var url = renderable ? URL.createObjectURL(blob) : null;
-        if (url) u.galleryUrls.push(url);
+        var url = URL.createObjectURL(blob);
+        u.galleryUrls.push(url);
         return {
           name: e.name, url: url,
           group: classifyEntry(e.path, u.folderBase),
@@ -509,8 +508,6 @@
         if (state.current !== index) return;
         var cell = els.rvDefects.querySelector('[data-dfx="' + d.id + '"] .dfx__thumb');
         if (!cell) return;
-        var renderable = ['heic', 'heif'].indexOf(extOf(d.name)) === -1;
-        if (!renderable) { cell.innerHTML = '<div class="dfx__thumb--none">无法预览</div>'; return; }
         d.origUrl = URL.createObjectURL(blob);
         u.galleryUrls.push(d.origUrl);
         cell.innerHTML = '<img src="' + d.origUrl + '" alt="' + escapeHtml(d.label) + '" data-zoom="' + d.origUrl + '" />';
@@ -908,6 +905,20 @@
       PACK_FACES.forEach(function (f) { var p = u.packaging[f.id]; if (p && p.url) URL.revokeObjectURL(p.url); });
     });
   });
+
+  // Fallback for browsers that cannot decode HEIC/HEIF (desktop Chrome/Firefox).
+  document.addEventListener('error', function (e) {
+    if (e.target.tagName !== 'IMG') return;
+    var cell = e.target.closest('.gal__cell');
+    if (cell && !cell.querySelector('.gal__cell--none')) {
+      e.target.outerHTML = '<div class="gal__cell--none">无法预览</div>';
+      return;
+    }
+    var dThumb = e.target.closest('.dfx__thumb');
+    if (dThumb) {
+      dThumb.innerHTML = '<div class="dfx__thumb--none">无法预览</div>';
+    }
+  }, true);
 
   // 启动:载入本机暂存的待终审草稿
   restoreDrafts();
