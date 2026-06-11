@@ -976,6 +976,7 @@
     QCStorage.upload({
       blob: res.blob,
       folder: res.folderBase,
+      subfolder: '质检员首次检查',
       model: model,
       unit: unit,
       inspector: inspector || '',
