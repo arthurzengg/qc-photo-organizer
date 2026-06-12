@@ -144,6 +144,12 @@
     setTimeout(function () { URL.revokeObjectURL(url); }, 1500);
   }
 
+  // iPad 桌面版 UA 报 MacIntel,用触点数兜底识别。
+  function isIOS() {
+    return /iP(hone|ad|od)/.test(navigator.userAgent) ||
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  }
+
   // ---------- IndexedDB draft store (本机暂存待终审草稿) ----------
   // File 对象经结构化克隆存入 IndexedDB 会保留(含 name),刷新/关页后仍在。
   var DB_NAME = 'qc-supervisor', STORE = 'drafts';
@@ -705,14 +711,28 @@
       return out.generateAsync({ type: 'uint8array', compression: 'STORE' });
     }).then(function (u8) {
       var blob = new Blob([u8], { type: 'application/zip' });
-      triggerDownload(blob, reportBase + '.zip');
       if (window.QCStorage && QCStorage.configured()) {
-        QCStorage.upload({
+        var rec = {
           bytes: u8, blob: blob, folder: reportBase, subfolder: '最终审查',
           onProgress: function (done, total) { toast('云端上传中… ' + done + '/' + total + ' 片'); },
-        })
-          .then(function () { toast('已同步到云端'); })
-          .catch(function (err) { console.error('云端上传失败', err); });
+        };
+        if (isIOS()) {
+          // iOS:触发下载会取消进行中的请求,先传云端,结束后再下载本地报告。
+          QCStorage.upload(rec)
+            .then(function () { triggerDownload(blob, reportBase + '.zip'); toast('已同步到云端'); })
+            .catch(function (err) {
+              triggerDownload(blob, reportBase + '.zip');
+              console.error('云端上传失败', err);
+              toast('云端上传失败（本地报告已下载）');
+            });
+        } else {
+          triggerDownload(blob, reportBase + '.zip');
+          QCStorage.upload(rec)
+            .then(function () { toast('已同步到云端'); })
+            .catch(function (err) { console.error('云端上传失败', err); });
+        }
+      } else {
+        triggerDownload(blob, reportBase + '.zip');
       }
       u.status = u.verdict || '已复核';
       // 终审出报告后,清掉本机暂存的草稿

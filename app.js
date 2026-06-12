@@ -287,6 +287,12 @@
     setTimeout(function () { URL.revokeObjectURL(url); }, 1500);
   }
 
+  // iPad 桌面版 UA 报 MacIntel,用触点数兜底识别。
+  function isIOS() {
+    return /iP(hone|ad|od)/.test(navigator.userAgent) ||
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  }
+
   var toastTimer = null;
   function showToast(msg) {
     els.toast.textContent = msg;
@@ -918,9 +924,18 @@
     buildZipBlob(model, unit, inspector, state.slots, state.attachments, features, test).then(function (res) {
       state.lastBlob = res.blob;
       state.lastFolder = res.folderBase;
-      triggerDownload(res.blob, res.folderBase + '.zip');
       recordHistory(res, model, unit, inspector, features, test);
-      uploadToCloud(res, model, unit, inspector);
+      // iOS(所有浏览器):触发本地下载会让 WebKit 取消页面上进行中的请求,
+      // 紧随其后的上传 fetch 立刻 "Load failed"。所以 iOS 上先传云端,
+      // 上传结束(无论成败)再触发下载;桌面端保持先下载、后台上传。
+      if (isIOS() && window.QCStorage && QCStorage.configured()) {
+        uploadToCloud(res, model, unit, inspector, function () {
+          triggerDownload(res.blob, res.folderBase + '.zip');
+        });
+      } else {
+        triggerDownload(res.blob, res.folderBase + '.zip');
+        uploadToCloud(res, model, unit, inspector);
+      }
       var extra = res.defectCount > 0 ? '（瑕疵 ' + res.defectCount + ' 张）' : '';
       showOverlay('check', '已生成 ' + res.folderBase + '.zip · 共 ' + res.count + ' 张' + extra);
       setStatus('ready');
@@ -972,10 +987,11 @@
     return notes;
   }
 
-  // Best-effort upload to the central cloud. Never blocks the local ZIP download;
-  // failures just show a toast (the inspector still has the ZIP on the device).
-  function uploadToCloud(res, model, unit, inspector) {
-    if (!window.QCStorage || !QCStorage.configured()) return;
+  // Best-effort upload to the central cloud. onSettled (optional) fires when the
+  // upload finishes either way — on iOS the local ZIP download waits on it, since
+  // triggering a download cancels in-flight requests there (see generate()).
+  function uploadToCloud(res, model, unit, inspector, onSettled) {
+    if (!window.QCStorage || !QCStorage.configured()) { if (onSettled) onSettled(); return; }
     showToast('正在上传云端…');
     var t0 = Date.now();
     QCStorage.upload({
@@ -993,9 +1009,11 @@
       attachCount: res.attachCount,
       notes: collectDefectNotes(),
     }).then(function () {
+      if (onSettled) onSettled();
       // 临时诊断:成功也弹窗,确保看得见结果。定位后改回轻提示。
       window.alert('✅ 已上传到云端汇总\n\n耗时约 ' + Math.round((Date.now() - t0) / 1000) + ' 秒');
     }).catch(function (err) {
+      if (onSettled) onSettled();
       console.error(err);
       // 临时诊断:用 alert 弹出确切错误,方便截图反馈。问题定位后会改回轻提示。
       // 代码版本一并显示 —— 可确认手机跑的是不是新代码（旧缓存是上次排查的干扰项）。
