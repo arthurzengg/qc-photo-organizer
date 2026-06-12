@@ -11,27 +11,19 @@
 (function () {
   'use strict';
 
-  // 包装箱 5 个面(顺序即展示顺序)
-  var PACK_FACES = [
-    { id: 'front', label: '前' },
-    { id: 'back',  label: '后' },
-    { id: 'left',  label: '左' },
-    { id: 'right', label: '右' },
-    { id: 'top',   label: '上' },
-  ];
-  var IMG_EXT = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp', 'heic', 'heif', 'tif', 'tiff'];
+  // 共享域数据 / 工具(lib/qc-domain.js、lib/qc-utils.js,boot-supervisor.js
+  // 先于本文件加载)。目录名、部位顺序等契约只在 qc-domain.js 里改。
+  var D = window.QCDomain, U = window.QCUtils;
+  var PACK_FACES = D.PACK_FACES;
 
   // 与质检端一致的部位顺序(总览照片按此排序,和拍照界面一一对应)
-  var PART_ORDER = [
-    '背面', '左侧板', '正面', '右侧板', '顶板', '玻璃',
-    '内侧板（左）', '内侧板（右）', '内背板', '内顶板', '坐板', '坐前板', '脚板', '温度控制面板',
-  ];
+  var PART_ORDER = D.PART_LABELS;
   // 复核照片分组(顺序即展示顺序),对应质检 ZIP 的子目录
   // 瑕疵单独走「瑕疵复检」卡片(可补复检后照片),不在只读相册里展示
   var GAL_GROUPS = [
-    { key: 'ext', title: '外部' },
-    { key: 'int', title: '内部' },
-    { key: 'attach', title: '附件' },
+    { key: 'ext', title: D.GROUP_FOLDER.external },
+    { key: 'int', title: D.GROUP_FOLDER.internal },
+    { key: 'attach', title: D.ATTACH_FOLDER },
     { key: 'other', title: '其他' },
   ];
 
@@ -71,9 +63,15 @@
 
   // ---------- helpers ----------
   function uid() { state.uidSeq += 1; return 'u' + state.uidSeq; }
-  function extOf(name) { var m = /\.([A-Za-z0-9]+)$/.exec(name || ''); return m ? m[1].toLowerCase() : ''; }
-  function isImage(name) { return IMG_EXT.indexOf(extOf(name)) !== -1; }
-  function baseName(name) { var s = String(name || ''); var i = s.lastIndexOf('/'); return i >= 0 ? s.slice(i + 1) : s; }
+  // 共享工具(lib/qc-utils.js)沿用本文件历史局部名。
+  var extOf = U.extFromName;
+  var isImage = U.isImageName;
+  var baseName = U.baseName;
+  var escapeHtml = U.escapeHtml;
+  var csvEscape = U.csvEscape;
+  var fmtNow = U.formatNow;
+  var triggerDownload = U.triggerDownload;
+  var isIOS = U.isIOS;
 
   // 质检 ZIP 路径形如 `型号-编号/外部/型号-编号-正面.jpg`(瑕疵在 瑕疵/外部|内部)。
   // 用顶层子目录判定分组。
@@ -82,10 +80,10 @@
     var fname = segs[segs.length - 1] || '';
     // 不依赖顶层文件夹名是否与文件名一致:按已知目录段或文件名特征判定。
     // 「瑕疵」要最先判(瑕疵照片在 瑕疵/外部|内部 下,路径里也含 外部/内部)。
-    if (segs.indexOf('瑕疵') !== -1 || /[-_]瑕疵\d+/.test(fname)) return 'defect';
-    if (segs.indexOf('附件') !== -1) return 'attach';
-    if (segs.indexOf('外部') !== -1) return 'ext';
-    if (segs.indexOf('内部') !== -1) return 'int';
+    if (segs.indexOf(D.DEFECT_FOLDER) !== -1 || new RegExp('[-_]' + D.DEFECT_FOLDER + '\\d+').test(fname)) return 'defect';
+    if (segs.indexOf(D.ATTACH_FOLDER) !== -1) return 'attach';
+    if (segs.indexOf(D.GROUP_FOLDER.external) !== -1) return 'ext';
+    if (segs.indexOf(D.GROUP_FOLDER.internal) !== -1) return 'int';
     return 'other';
   }
   // 去掉「型号-编号-」前缀与扩展名,得到友好标签:正面 / 正面-瑕疵1-毛刺。
@@ -115,40 +113,12 @@
     });
     return arr;
   }
-  function escapeHtml(s) {
-    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
-    });
-  }
-  function csvEscape(v) {
-    var s = String(v == null ? '' : v);
-    return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
-  }
-  function fmtNow() {
-    var d = new Date(), p = function (n) { return String(n).padStart(2, '0'); };
-    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) +
-      ' ' + p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds());
-  }
   var toastTimer = null;
   function toast(msg) {
     els.toast.textContent = msg; els.toast.classList.add('on');
     clearTimeout(toastTimer); toastTimer = setTimeout(function () { els.toast.classList.remove('on'); }, 2200);
   }
   function showOverlay(on) { els.overlay.classList.toggle('on', !!on); }
-
-  function triggerDownload(blob, filename) {
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement('a');
-    a.href = url; a.download = filename; a.rel = 'noopener';
-    document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(function () { URL.revokeObjectURL(url); }, 1500);
-  }
-
-  // iPad 桌面版 UA 报 MacIntel,用触点数兜底识别。
-  function isIOS() {
-    return /iP(hone|ad|od)/.test(navigator.userAgent) ||
-      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  }
 
   // ---------- IndexedDB draft store (本机暂存待终审草稿) ----------
   // File 对象经结构化克隆存入 IndexedDB 会保留(含 name),刷新/关页后仍在。
@@ -220,7 +190,8 @@
 
       // 推断 型号-编号 文件夹名:优先用「质检备注.csv」所在的顶层目录,其次用
       // 出现最多的顶层目录(忽略 __MACOSX 等杂项),最后退回压缩包文件名。
-      var csvEntry = entries.filter(function (p) { return /质检备注\.csv$/.test(p); })[0];
+      var isManifest = function (p) { return baseName(p) === D.MANIFEST_CSV; };
+      var csvEntry = entries.filter(isManifest)[0];
       var folderBase;
       if (csvEntry && csvEntry.indexOf('/') !== -1) {
         folderBase = csvEntry.split('/')[0];
@@ -246,7 +217,7 @@
       };
 
       // 读 质检备注.csv 拿 型号/编号/质检员
-      var csvPath = entries.filter(function (p) { return /质检备注\.csv$/.test(p); })[0];
+      var csvPath = csvEntry;
       var csvP = csvPath
         ? zip.file(csvPath).async('string').then(function (txt) { unitObj.csvText = txt; parseMeta(unitObj, txt); })
         : Promise.resolve();
@@ -668,11 +639,11 @@
 
     showOverlay(true);
     var out = new JSZip();
-    var reportBase = u.folderBase + '-主管复检';
+    var reportBase = u.folderBase + '-' + D.REPORT_SUFFIX;
     var root = out.folder(reportBase);
 
     // 1) 原始质检照片原样收进 原始质检/
-    var origDir = root.folder('原始质检');
+    var origDir = root.folder(D.REPORT_ORIG_FOLDER);
     var copyJobs = [];
     u.zip.forEach(function (path, obj) {
       if (obj.dir) return;
@@ -680,7 +651,7 @@
     });
 
     // 2) 包装照片进 包装/
-    var packDir = root.folder('包装');
+    var packDir = root.folder(D.REPORT_PACK_FOLDER);
     PACK_FACES.forEach(function (f) {
       var p = u.packaging[f.id];
       if (p && p.file) packDir.file(u.folderBase + '-包装箱-' + f.label + '.' + (p.ext || 'jpg'), p.file);
@@ -689,7 +660,7 @@
     // 3) 复检后照片进 瑕疵复检/
     var defects = u.defects || [];
     if (defects.length) {
-      var fixDir = root.folder('瑕疵复检');
+      var fixDir = root.folder(D.REPORT_FIX_FOLDER);
       var usedFix = {};
       defects.forEach(function (d) {
         if (!d.repairFile) return;
@@ -703,7 +674,7 @@
     }
 
     // 4) 复检报告 CSV
-    root.file('主管复检报告.csv', buildReportCsv(u, packCount));
+    root.file(D.REPORT_CSV, buildReportCsv(u, packCount));
 
     Promise.all(copyJobs).then(function () {
       // uint8array: raw bytes are uploaded directly — Blob round-trips can throw
@@ -713,7 +684,7 @@
       var blob = new Blob([u8], { type: 'application/zip' });
       if (window.QCStorage && QCStorage.configured()) {
         var rec = {
-          bytes: u8, blob: blob, folder: reportBase, subfolder: '最终审查',
+          bytes: u8, blob: blob, folder: reportBase, subfolder: D.STAGE_FINAL,
           onProgress: function (done, total) { toast('云端上传中… ' + done + '/' + total + ' 片'); },
         };
         if (isIOS()) {

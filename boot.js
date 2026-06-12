@@ -7,7 +7,7 @@
 (function () {
   'use strict';
 
-  var V = 'v28';
+  var V = 'v29';
   window.QC_VERSION = V; // 诊断弹窗里显示,确认真机跑的是哪个版本
   var CONFIG_URL = 'https://haoyao-qc-hk.oss-cn-hongkong.aliyuncs.com/public/qc-config.json';
 
@@ -19,13 +19,20 @@
     document.body.appendChild(s);
   }
 
+  // 顺序加载:域数据 → 共享工具 → 存储实现(接管 window.QCStorage) → 主程序
+  function loadChain(srcs) {
+    if (!srcs.length) return;
+    loadScript(srcs[0], function () { loadChain(srcs.slice(1)); });
+  }
+
   function startApp() {
-    // 先加载存储实现(按 provider 接管 window.QCStorage),再加载主程序
-    loadScript('lib/storage-oss.js?' + V, function () {
-      loadScript('lib/storage.js?' + V, function () {
-        loadScript('app.js?' + V);
-      });
-    });
+    loadChain([
+      'lib/qc-domain.js?' + V,
+      'lib/qc-utils.js?' + V,
+      'lib/storage-oss.js?' + V,
+      'lib/storage.js?' + V,
+      'app.js?' + V,
+    ]);
   }
 
   fetch(CONFIG_URL + '?t=' + (new Date().getTime()), { cache: 'no-store' })
