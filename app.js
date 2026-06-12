@@ -137,13 +137,51 @@
     historyBack: document.getElementById('history-back'),
     historyTitle: document.getElementById('history-modal-title'),
     historyBody: document.getElementById('history-body'),
+    actionBar: document.getElementById('action-bar'),
     toast: document.getElementById('toast'),
   };
 
   // ===================== Helpers =====================
 
+  var viewportSyncRAF = null;
+
   function prefersReducedMotion() {
     return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  }
+
+  function isEditableActive() {
+    var el = document.activeElement;
+    if (!el || el === document.body) return false;
+    if (el.isContentEditable) return true;
+    return /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName || '');
+  }
+
+  function syncViewportMetrics() {
+    viewportSyncRAF = null;
+
+    var bottom = 0;
+    var vv = window.visualViewport;
+    if (vv) {
+      bottom = Math.round(window.innerHeight - vv.height - vv.offsetTop);
+      if (!isFinite(bottom)) bottom = 0;
+      var maxShift = Math.round(window.innerHeight * 0.45);
+      bottom = Math.max(-maxShift, Math.min(bottom, maxShift));
+    }
+
+    var coarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+    var keyboardOpen = coarse && isEditableActive() && bottom > 120;
+    document.documentElement.classList.toggle('is-keyboard-open', keyboardOpen);
+    document.documentElement.style.setProperty('--vv-bottom', (keyboardOpen ? 0 : bottom) + 'px');
+
+    if (els.actionBar) {
+      var h = Math.ceil(els.actionBar.getBoundingClientRect().height);
+      if (h > 0) document.documentElement.style.setProperty('--bar-space', (h + 14) + 'px');
+    }
+  }
+
+  function scheduleViewportSync() {
+    if (viewportSyncRAF !== null) return;
+    viewportSyncRAF = requestAnimationFrame(syncViewportMetrics);
   }
 
   function cardFor(id) {
@@ -551,10 +589,32 @@
     return v === '合格' ? 'ok' : (v === '不合格' ? 'bad' : 'na');
   }
 
+  function testGroupProgress(group) {
+    var total = 0, done = 0;
+    group.items.forEach(function (it) {
+      if (it.type === 'param') return;
+      total++;
+      if (state.test[it.id]) done++;
+    });
+    return { total: total, done: done };
+  }
+
+  function testGroupHasData(group) {
+    return group.items.some(function (it) {
+      if (it.type === 'param') {
+        var p = state.test.params || {};
+        return !!((p.v || '').trim() || (p.w || '').trim() || (p.a || '').trim());
+      }
+      return !!state.test[it.id];
+    });
+  }
+
   function renderTestReport() {
     var list = document.querySelector('[data-test-list]');
     if (!list) return;
-    list.innerHTML = TEST_GROUPS.map(function (g) {
+    var compact = window.matchMedia && window.matchMedia('(max-width: 540px)').matches;
+    list.innerHTML = TEST_GROUPS.map(function (g, gi) {
+      var progress = testGroupProgress(g);
       var rows = g.items.map(function (it) {
         if (it.type === 'param') {
           var p = state.test.params || {};
@@ -577,19 +637,26 @@
           '<div class="test-verdict">' + btns + '</div>' +
         '</div>';
       }).join('');
-      return '<div class="test-group"><div class="test-group__h">' + escapeHtml(g.name) + '</div>' + rows + '</div>';
+      var open = !compact || testGroupHasData(g);
+      return '<details class="test-group" data-test-group="' + gi + '"' + (open ? ' open' : '') + '>' +
+        '<summary class="test-group__summary">' +
+          '<span class="test-group__name">' + escapeHtml(g.name) + '</span>' +
+          '<span class="test-group__count" data-test-group-count="' + gi + '">' + progress.done + '/' + progress.total + '</span>' +
+        '</summary>' +
+        '<div class="test-group__body">' + rows + '</div>' +
+      '</details>';
     }).join('');
     updateTestCount();
   }
 
   function updateTestCount() {
     var total = 0, done = 0;
-    TEST_GROUPS.forEach(function (g) {
-      g.items.forEach(function (it) {
-        if (it.type === 'param') return;
-        total++;
-        if (state.test[it.id]) done++;
-      });
+    TEST_GROUPS.forEach(function (g, gi) {
+      var progress = testGroupProgress(g);
+      total += progress.total;
+      done += progress.done;
+      var gel = document.querySelector('[data-test-group-count="' + gi + '"]');
+      if (gel) gel.textContent = progress.done + '/' + progress.total;
     });
     var el = document.querySelector('[data-test-count]');
     if (el) el.textContent = done + '/' + total;
@@ -688,6 +755,7 @@
     } else {
       els.historyBtn.hidden = true;
     }
+    scheduleViewportSync();
   }
 
   function setStatus(s) {
@@ -1489,6 +1557,15 @@
       if (!els.scanModal.hidden) stopScan();
       else if (!els.historyModal.hidden) closeHistory();
     });
+
+    window.addEventListener('resize', scheduleViewportSync);
+    window.addEventListener('orientationchange', scheduleViewportSync);
+    document.addEventListener('focusin', scheduleViewportSync);
+    document.addEventListener('focusout', function () { setTimeout(scheduleViewportSync, 80); });
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', scheduleViewportSync);
+      window.visualViewport.addEventListener('scroll', scheduleViewportSync);
+    }
 
     
     window.addEventListener('dragover', function (e) { e.preventDefault(); });
