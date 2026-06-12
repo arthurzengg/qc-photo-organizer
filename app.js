@@ -12,69 +12,18 @@
 (function () {
   'use strict';
 
-  // ---- Static config: the 14 fixed surfaces, in display order ----
-  const PARTS = [
-    { id: 'back',        label: '背面',        group: 'external' },
-    { id: 'left_side',   label: '左侧板',      group: 'external' },
-    { id: 'front',       label: '正面',        group: 'external' },
-    { id: 'right_side',  label: '右侧板',      group: 'external' },
-    { id: 'top',         label: '顶板',        group: 'external' },
-    { id: 'glass',       label: '玻璃',        group: 'external' },
-    { id: 'inner_left',  label: '内侧板（左）', group: 'internal' },
-    { id: 'inner_right', label: '内侧板（右）', group: 'internal' },
-    { id: 'inner_back',  label: '内背板',      group: 'internal' },
-    { id: 'inner_top',   label: '内顶板',      group: 'internal' },
-    { id: 'seat',        label: '坐板',        group: 'internal' },
-    { id: 'seat_front',  label: '坐前板',      group: 'internal' },
-    { id: 'foot',        label: '脚板',        group: 'internal' },
-    { id: 'control_panel', label: '温度控制面板', group: 'internal' },
-  ];
+  // ---- Domain data & shared helpers (lib/qc-domain.js / lib/qc-utils.js,
+  //      loaded by boot.js before this file). Extend the checklists THERE. ----
+  const D = window.QCDomain, U = window.QCUtils;
+  const PARTS = D.PARTS;
   const TOTAL = PARTS.length; // 14
-  const GROUP_FOLDER = { external: '外部', internal: '内部' };
-  const DEFECT_FOLDER = '瑕疵';
-  const ATTACH_FOLDER = '附件';
-  const DEFECT_CATS = ['毛刺', '裂痕', '钉子', '灰尘', '其他']; // quick-pick defect types
-  // 功能配置检查项(勾选=已配且正常),写入质检报告
-  const FEATURES = [
-    { id: 'bluetooth', label: '蓝牙音响' },
-    { id: 'led_ring', label: 'LED环形灯' },
-    { id: 'reading_light', label: '阅读灯' },
-  ];
-
-  // 智能化测试报告(质检员填测试结果,主管审核)。每项单项判定:合格/不合格/不适用。
-  // type:'param' 的项是工作电压/功率/电流的数值录入。
-  const TEST_GROUPS = [
-    { name: '外观', items: [
-      { id: 'ap1', text: '电器部件安装、布局合理，布线/走线整洁美观' },
-      { id: 'ap2', text: '显示屏显示符合说明书及文字要求，无破损/光斑/闪烁等不良' },
-      { id: 'ap3', text: '客户安装的控制线有清晰、牢固的标识线指导安装' },
-    ] },
-    { name: '功能', items: [
-      { id: 'fn1', text: '控制器功能按键及工作逻辑与说明书相对应' },
-      { id: 'fn2', text: 'RGB彩灯：正常开/关，颜色与说明书相对应' },
-      { id: 'fn3', text: '照明功能：正常开/关，灯光均匀、无色斑及闪烁' },
-      { id: 'fn12', text: '蓝牙功能：按说明书可正常配对并播放音乐' },
-    ] },
-    { name: '参数', items: [
-      { id: 'pm_power', text: '工作电压 / 功率 / 电流（实测）', type: 'param' },
-      { id: 'pm1', text: '测试总功率与产品设计功率相符' },
-      { id: 'pm2', text: '负载总功率与控制器最大载荷在合理范围内（<3.5KW）' },
-      { id: 'pm3', text: '输入电源线与负载功率符合配套规则要求' },
-    ] },
-    { name: '安全性能', items: [
-      { id: 'sf1', text: '1类电器，电气安全性能符合 GB 4706.31' },
-      { id: 'sf2', text: '加热元件人体易接触处装非金属护栏，栅栏间距≤50mm' },
-    ] },
-    { name: '发热温升', items: [
-      { id: 'ht1', text: '手摸或红外测温仪测试每块发热板正常发热' },
-      { id: 'ht2', text: '最大功率工作20min，控制器温度达到45℃' },
-      { id: 'ht3', text: '最大功率工作30min，控制器温度达到60℃' },
-    ] },
-    { name: '异味', items: [
-      { id: 'od1', text: '测试后无烧焦、刺鼻等异常气味' },
-    ] },
-  ];
-  const TEST_VERDICTS = ['合格', '不合格', '不适用'];
+  const GROUP_FOLDER = D.GROUP_FOLDER;
+  const DEFECT_FOLDER = D.DEFECT_FOLDER;
+  const ATTACH_FOLDER = D.ATTACH_FOLDER;
+  const DEFECT_CATS = D.DEFECT_CATS;
+  const FEATURES = D.FEATURES;
+  const TEST_GROUPS = D.TEST_GROUPS;
+  const TEST_VERDICTS = D.TEST_VERDICTS;
   const GROUP_TOTALS = PARTS.reduce(function (acc, p) {
     acc[p.group] = (acc[p.group] || 0) + 1;
     return acc;
@@ -192,106 +141,21 @@
     return (state.unit || '').trim() || '01';
   }
 
-  // Strip filesystem-illegal characters while preserving Chinese (kept as UTF-8
-  // in the ZIP entry names). Returns a safe, length-capped name.
-  function sanitizeFilename(raw, fallback) {
-    var s = String(raw == null ? '' : raw);
-    if (s.normalize) s = s.normalize('NFC');
-    s = s.replace(/[\/\\:*?"<>|]/g, '_'); // illegal on Windows/macOS
-    s = s.replace(/[\x00-\x1f\x7f]/g, ''); // control chars
-    s = s.replace(/\s+/g, ' ').trim();     // collapse whitespace
-    s = s.replace(/^\.+/, '').replace(/[. ]+$/, ''); // no leading dots / trailing dot or space
-    if (!s) s = fallback || '未命名';
-    if (/^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])$/i.test(s)) s = '_' + s; // Windows reserved
-    return s.slice(0, 80);
-  }
-
-  // Sanitize an attachment's original filename, preserving its extension.
-  function sanitizeAttachmentName(name) {
-    var raw = String(name == null ? '' : name);
-    var dot = raw.lastIndexOf('.');
-    var base = dot > 0 ? raw.slice(0, dot) : raw;
-    var ext = dot > 0 ? raw.slice(dot + 1) : '';
-    base = sanitizeFilename(base, '附件');
-    var safeExt = ext.replace(/[^A-Za-z0-9]/g, '').slice(0, 8).toLowerCase();
-    return safeExt ? base + '.' + safeExt : base;
-  }
-
-  function extFromName(name) {
-    var m = /\.([A-Za-z0-9]{1,8})$/.exec(name || '');
-    return m ? m[1].toLowerCase() : '';
-  }
-
-  function extFromMime(type) {
-    var map = {
-      'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp',
-      'image/gif': 'gif', 'image/heic': 'heic', 'image/heif': 'heif',
-      'image/bmp': 'bmp', 'image/tiff': 'tif',
-    };
-    return map[(type || '').toLowerCase()] || '';
-  }
-
-  // Whether the browser can likely render this file as an <img>.
-  // HEIC/HEIF are included — iOS Safari decodes them natively. Desktop
-  // browsers that cannot decode HEIC will fire img.onerror and fall back.
-  function isRenderable(file) {
-    var t = (file.type || '').toLowerCase();
-    var ext = extFromName(file.name);
-    if (t.indexOf('image/') === 0) return true;
-    if (!t && ['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp', 'heic', 'heif'].indexOf(ext) !== -1) return true;
-    return false;
-  }
-
-  function csvEscape(v) {
-    var s = String(v == null ? '' : v);
-    if (/[",\r\n]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
-    return s;
-  }
-
-  function escapeHtml(s) {
-    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
-    });
-  }
-
-  function fileExt(file) {
-    return extFromName(file.name) || extFromMime(file.type) || 'bin';
-  }
-
-  function formatSize(bytes) {
-    if (bytes == null || isNaN(bytes)) return '';
-    if (bytes < 1024) return bytes + ' B';
-    if (bytes < 1024 * 1024) return Math.round(bytes / 1024) + ' KB';
-    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
-  }
-
-  function formatNow() {
-    var d = new Date();
-    var p = function (n) { return String(n).padStart(2, '0'); };
-    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) +
-      ' ' + p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds());
-  }
-
-  // Increment a unit string, preserving any non-digit prefix/suffix and zero-pad
-  // width: "01" -> "02", "09" -> "10", "A-01" -> "A-02". Non-numeric kept as-is.
-  function incrementUnit(unit) {
-    var s = String(unit || '').trim();
-    var m = /^(\D*?)(\d+)(\D*)$/.exec(s);
-    if (!m) return s || '01';
-    var next = String(Number(m[2]) + 1).padStart(m[2].length, '0');
-    return m[1] + next + m[3];
-  }
-
-  function dedupe(name, used) {
-    if (!used.has(name)) { used.add(name); return name; }
-    var dot = name.lastIndexOf('.');
-    var base = dot > 0 ? name.slice(0, dot) : name;
-    var ext = dot > 0 ? name.slice(dot) : '';
-    var i = 2, candidate;
-    do { candidate = base + ' (' + i + ')' + ext; i++; } while (used.has(candidate));
-    used.add(candidate);
-    return candidate;
-  }
+  // Shared helpers (lib/qc-utils.js) under their historical local names.
+  var sanitizeFilename = U.sanitizeFilename;
+  var sanitizeAttachmentName = U.sanitizeAttachmentName;
+  var extFromName = U.extFromName;
+  var extFromMime = U.extFromMime;
+  var isRenderable = U.isRenderable;
+  var csvEscape = U.csvEscape;
+  var escapeHtml = U.escapeHtml;
+  var fileExt = U.fileExt;
+  var formatSize = U.formatSize;
+  var formatNow = U.formatNow;
+  var incrementUnit = U.incrementUnit;
+  var dedupe = U.dedupe;
+  var triggerDownload = U.triggerDownload;
+  var isIOS = U.isIOS;
 
   function countPhotos() {
     var n = 0;
@@ -311,24 +175,6 @@
     var n = 0;
     for (var i = 0; i < PARTS.length; i++) if (state.slots[PARTS[i].id].defects.length) n++;
     return n;
-  }
-
-  function triggerDownload(blob, filename) {
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.rel = 'noopener';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(function () { URL.revokeObjectURL(url); }, 1500);
-  }
-
-  // iPad 桌面版 UA 报 MacIntel,用触点数兜底识别。
-  function isIOS() {
-    return /iP(hone|ad|od)/.test(navigator.userAgent) ||
-      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   }
 
   var toastTimer = null;
@@ -938,7 +784,7 @@
       rows.push({ category: ATTACH_FOLDER, label: (a.location || '').trim(), type: '附件', path: apath, note: (a.note || '').trim() });
     });
 
-    root.file('质检备注.csv', buildCsv(model, unit, inspector, partCount, defectPhotoCount, defectSurfaceCount, attachCount, features, test, rows));
+    root.file(D.MANIFEST_CSV, buildCsv(model, unit, inspector, partCount, defectPhotoCount, defectSurfaceCount, attachCount, features, test, rows));
 
     // uint8array output: the raw bytes go straight to fetch() for the cloud
     // upload — any Blob round-trip (construct + read back) can throw
@@ -1067,7 +913,7 @@
       blob: res.blob,
       onProgress: function (done, total) { showToast('云端上传中… ' + done + '/' + total + ' 片'); },
       folder: res.folderBase,
-      subfolder: '质检员首次检查',
+      subfolder: D.STAGE_INSPECTION,
       model: model,
       unit: unit,
       inspector: inspector || '',

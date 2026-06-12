@@ -6,7 +6,7 @@
 (function () {
   'use strict';
 
-  var V = 'v25';
+  var V = 'v29';
   window.QC_VERSION = V; // 诊断时确认真机跑的是哪个版本
   var CONFIG_URL = 'https://haoyao-qc-hk.oss-cn-hongkong.aliyuncs.com/public/qc-config.json';
 
@@ -18,14 +18,21 @@
     document.body.appendChild(s);
   }
 
+  // 顺序加载:OSS SDK → 域数据 → 共享工具 → 存储实现 → 主程序
+  function loadChain(srcs) {
+    if (!srcs.length) return;
+    loadScript(srcs[0], function () { loadChain(srcs.slice(1)); });
+  }
+
   function startApp() {
-    loadScript('lib/aliyun-oss-sdk.min.js?' + V, function () {
-      loadScript('lib/storage-oss.js?' + V, function () {
-        loadScript('lib/storage.js?' + V, function () {
-          loadScript('supervisor.js?v12');
-        });
-      });
-    });
+    loadChain([
+      'lib/aliyun-oss-sdk.min.js?' + V,
+      'lib/qc-domain.js?' + V,
+      'lib/qc-utils.js?' + V,
+      'lib/storage-oss.js?' + V,
+      'lib/storage.js?' + V,
+      'supervisor.js?v13',
+    ]);
   }
 
   fetch(CONFIG_URL + '?t=' + (new Date().getTime()), { cache: 'no-store' })
