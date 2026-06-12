@@ -1010,13 +1010,11 @@
       notes: collectDefectNotes(),
     }).then(function () {
       if (onSettled) onSettled();
-      // 临时诊断:成功也弹窗,确保看得见结果。定位后改回轻提示。
-      window.alert('✅ 已上传到云端汇总\n\n耗时约 ' + Math.round((Date.now() - t0) / 1000) + ' 秒');
+      showToast('✅ 已同步到云端（耗时约 ' + Math.round((Date.now() - t0) / 1000) + ' 秒）');
     }).catch(function (err) {
       if (onSettled) onSettled();
       console.error(err);
-      // 临时诊断:用 alert 弹出确切错误,方便截图反馈。问题定位后会改回轻提示。
-      // 代码版本一并显示 —— 可确认手机跑的是不是新代码（旧缓存是上次排查的干扰项）。
+      // 失败保留弹窗:含错误、耗时、大小、代码版本,方便截图反馈。
       window.alert('❌ 云端上传失败（本地 ZIP 已保存）。\n\n错误信息：\n' + (err && err.message ? err.message : err) +
                    '\n\n耗时约 ' + Math.round((Date.now() - t0) / 1000) + ' 秒' +
                    '\nZIP 大小：' + (res.bytes ? (res.bytes.length / 1048576).toFixed(1) + ' MB' : '未知') +

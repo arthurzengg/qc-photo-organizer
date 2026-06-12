@@ -28,6 +28,11 @@
 
 html { -webkit-text-size-adjust: 100%; }
 
+/* Mobile touch behaviour: no grey tap flash, no double-tap zoom on rapid taps
+   (e.g. ticking many verdict buttons in a row). */
+a, button, label, input, textarea, select { -webkit-tap-highlight-color: transparent; }
+a, button, label { touch-action: manipulation; }
+
 body {
   margin: 0;
   background: var(--bg);
@@ -44,7 +49,9 @@ body.modal-open { overflow: hidden; }
   width: 100%;
   max-width: 1100px;
   margin-inline: auto;
-  padding-inline: clamp(12px, 3vw, 24px);
+  /* keep clear of the notch in landscape (viewport-fit=cover) */
+  padding-inline: max(clamp(12px, 3vw, 24px), env(safe-area-inset-left))
+                  max(clamp(12px, 3vw, 24px), env(safe-area-inset-right));
 }
 
 .visually-hidden {
@@ -438,6 +445,13 @@ main { padding-bottom: var(--bar-space); }
 .test-v--bad.is-on { background: var(--danger); border-color: var(--danger); color: #fff; }
 .test-v--na.is-on { background: #64748b; border-color: #64748b; color: #fff; }
 .test-item--param { flex-direction: column; align-items: stretch; gap: 8px; }
+/* Phones: text above, three equal verdict buttons below — instead of
+   squeezing the item text next to ~190px of buttons. */
+@media (max-width: 480px) {
+  .test-item { flex-direction: column; align-items: stretch; gap: 8px; padding-block: 10px; }
+  .test-verdict { width: 100%; }
+  .test-verdict .test-v { flex: 1 1 0; padding-block: 9px; }
+}
 .test-param { display: flex; gap: 8px; flex-wrap: wrap; }
 .test-param label {
   display: inline-flex; align-items: center; gap: 4px;
@@ -556,16 +570,18 @@ main { padding-bottom: var(--bar-space); }
   box-shadow: 0 -4px 16px rgba(15, 23, 42, .06);
 }
 .action-bar__inner {
-  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  gap: 10px 12px;
   padding-block: 12px;
 }
-.action-bar__status { display: flex; align-items: center; gap: 10px; }
+.action-bar__status { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .count-pill {
   font-size: 14px; color: #334155;
   background: var(--surface-2);
   border: 1px solid var(--border);
   padding: 6px 12px; border-radius: 999px;
   white-space: nowrap;
+  min-width: 0; overflow: hidden; text-overflow: ellipsis;
 }
 .count-pill strong { color: var(--accent); }
 .action-bar__actions { display: flex; gap: 8px; }
@@ -580,6 +596,17 @@ main { padding-bottom: var(--bar-space); }
 }
 .action-bar__hint[data-tone="warn"] { color: var(--warn); }
 .action-bar__hint[data-tone="ok"] { color: var(--ok); }
+
+/* Phones: the single-row bar overflows (pill + 记录 + 下载 + 下一台 ≈ 500px),
+   so stack it — status line on top, full-width thumb-sized buttons below. */
+@media (max-width: 540px) {
+  :root { --bar-space: 152px; }
+  .action-bar__inner { padding-block: 10px; }
+  .action-bar__status { flex: 1 1 100%; justify-content: space-between; }
+  .action-bar__actions { flex: 1 1 100%; }
+  .action-bar__actions .btn { flex: 1 1 0; padding-inline: 10px; }
+  .action-bar__hint { text-align: center; }
+}
 
 /* ===== Buttons ===== */
 .btn {
@@ -718,7 +745,9 @@ main { padding-bottom: var(--bar-space); }
 .modal__backdrop { position: absolute; inset: 0; background: rgba(15, 23, 42, .5); }
 .modal__panel {
   position: relative;
-  width: 100%; max-width: 640px; max-height: 86vh;
+  width: 100%; max-width: 640px;
+  max-height: 86vh;
+  max-height: 86dvh; /* iOS Safari: 86vh overshoots when the URL bar is shown */
   background: var(--surface);
   border-radius: 18px 18px 0 0;
   display: flex; flex-direction: column;
@@ -876,6 +905,17 @@ main { padding-bottom: var(--bar-space); }
     from { opacity: 0; transform: translateY(8px); }
     to { opacity: 1; transform: translateY(0); }
   }
+}
+
+/* ===== Touch targets (coarse pointers only — desktop stays dense) ===== */
+@media (pointer: coarse) {
+  .test-v { min-height: 40px; padding-block: 8px; }
+  .defect-cat { min-height: 38px; padding-block: 7px; }
+  .slot__remove, .attach-item__remove { width: 32px; height: 32px; }
+  .defect-item__remove { width: 30px; height: 30px; }
+  .modal__back, .modal__close { padding: 10px 12px; }
+  .slot__defect { padding-block: 6px; }
+  .slot__defect-check { width: 20px; height: 20px; }
 }
 
 /* ===== Reduced motion ===== */
