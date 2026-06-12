@@ -3,19 +3,21 @@ name: Release and deploy
 # Push a version tag (e.g. v1.0.0) on main:
 #   git tag v1.0.0 && git push origin v1.0.0
 # This creates a GitHub Release with auto-generated notes and deploys the
-# tagged version to Netlify production. Requires one repo secret:
+# tagged version to Netlify production AND GitHub Pages. Pushes to main do
+# NOT publish anywhere: Pages is set to workflow builds (not legacy branch
+# builds), and the github-pages environment allows deployments from v* tags.
+# Requires one repo secret:
 #   NETLIFY_AUTH_TOKEN  - a Netlify personal access token
 on:
   push:
     tags:
       - 'v*'
 
-permissions:
-  contents: write   # needed to create the GitHub Release
-
 jobs:
   release-deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write   # needed to create the GitHub Release
     env:
       # Not secret (visible in the dashboard URL); the auth token is the secret.
       NETLIFY_SITE_ID: 3505a6d6-337b-4dfc-a51f-7ad8498c4878
@@ -48,3 +50,31 @@ jobs:
             --site "$NETLIFY_SITE_ID" \
             --auth "$NETLIFY_AUTH_TOKEN" \
             --message "Release $GITHUB_REF_NAME"
+
+  deploy-pages:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write      # deploy to GitHub Pages
+      id-token: write   # OIDC token to verify the deployment origin
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    concurrency:
+      group: github-pages
+      cancel-in-progress: false
+    steps:
+      - name: Checkout (the tagged commit)
+        uses: actions/checkout@v4
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload site artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
