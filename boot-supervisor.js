@@ -6,7 +6,7 @@
 (function () {
   'use strict';
 
-  var V = 'v29';
+  var V = 'v30';
   window.QC_VERSION = V; // 诊断时确认真机跑的是哪个版本
   var CONFIG_URL = 'https://haoyao-qc-hk.oss-cn-hongkong.aliyuncs.com/public/qc-config.json';
 
@@ -31,7 +31,8 @@
       'lib/qc-utils.js?' + V,
       'lib/storage-oss.js?' + V,
       'lib/storage.js?' + V,
-      'supervisor.js?v13',
+      'lib/oss-browser.js?' + V,
+      'supervisor.js?v14',
     ]);
   }
 

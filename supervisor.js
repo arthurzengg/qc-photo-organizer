@@ -917,6 +917,43 @@
     }
   }, true);
 
-  // 启动:载入本机暂存的待终审草稿
+  // ---------- 云端文件浏览器(只读)----------
+  // 用 QC_CONFIG.oss 里的【只读】钥匙实时浏览 records/qc-photo-organizer/。
+  // 没有只读钥匙(或 SDK/模块缺失)就保持隐藏,不影响导入复检主流程。
+  function initOssBrowser() {
+    var cfg = window.QC_CONFIG || {};
+    var o = cfg.oss || {};
+    var panel = document.getElementById('oss-panel');
+    var toggle = document.getElementById('ossb-toggle');
+    var bodyEl = document.getElementById('oss-browser');
+    if (!panel || !toggle || !bodyEl) return;
+    if (!window.QCOssBrowser || !window.OSS) return;
+    if (!o.region || !o.bucket || !o.readAccessKeyId || !o.readAccessKeySecret) return;
+
+    panel.classList.remove('hide');
+    var ctl = null, open = false;
+    toggle.addEventListener('click', function () {
+      open = !open;
+      bodyEl.classList.toggle('hide', !open);
+      toggle.textContent = open ? '收起' : '展开';
+      if (open) {
+        if (!ctl) {
+          ctl = window.QCOssBrowser.mount({
+            container: bodyEl,
+            region: o.region, bucket: o.bucket,
+            accessKeyId: o.readAccessKeyId, accessKeySecret: o.readAccessKeySecret,
+            prefix: 'records/qc-photo-organizer/',
+          });
+        } else {
+          ctl.resume();
+        }
+      } else if (ctl) {
+        ctl.pause();
+      }
+    });
+  }
+
+  // 启动:载入本机暂存的待终审草稿 + 云端浏览器(若配置了只读钥匙)
   restoreDrafts();
+  initOssBrowser();
 })();

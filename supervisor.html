@@ -151,6 +151,42 @@
     .summary__row-count { font-weight:700; color:var(--bad); white-space:nowrap; }
     .summary__row-count.zero { color:var(--ok); }
 
+    /* 云端文件浏览器(只读) */
+    .ossb-panel { background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:12px 14px; margin-bottom:14px; }
+    .ossb-panel__head { display:flex; align-items:center; gap:10px; }
+    .ossb-panel__head b { font-size:14px; }
+    .ossb-panel__head .sp { flex:1; }
+    .ossb-panel__sub { font-size:12px; color:var(--muted); margin:6px 2px 0; }
+    .ossb-body { margin-top:12px; }
+    .ossb-bar { display:flex; align-items:center; gap:10px; margin-bottom:6px; }
+    .ossb-crumb { flex:1; min-width:0; font-size:13px; color:#334155; word-break:break-all; }
+    .ossb-crumb a { color:var(--blue); text-decoration:none; }
+    .ossb-crumb a:hover { text-decoration:underline; }
+    .ossb-sep { color:#94a3b8; }
+    .ossb-refresh { border:1px solid var(--line-2); background:var(--surface); color:#475569; border-radius:8px; padding:5px 12px; font-size:13px; cursor:pointer; font-family:inherit; }
+    .ossb-refresh:hover { border-color:var(--blue); color:var(--blue); }
+    .ossb-stat { font-size:12px; color:var(--muted); margin:2px 2px 8px; }
+    .ossb-list { border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .ossb-row { display:flex; align-items:center; gap:10px; padding:10px 12px; border-bottom:1px solid var(--line); font-size:14px; }
+    .ossb-row:last-child { border-bottom:0; }
+    .ossb-row--dir { cursor:pointer; }
+    .ossb-row--dir:hover { background:var(--soft); }
+    .ossb-ic { flex-shrink:0; }
+    .ossb-name { flex:1; min-width:0; word-break:break-all; color:var(--ink); }
+    .ossb-meta { flex-shrink:0; font-size:12px; color:var(--muted); white-space:nowrap; }
+    .ossb-act { flex-shrink:0; display:inline-flex; gap:6px; align-items:center; color:var(--muted); font-size:12px; }
+    .ossb-btn { border:1px solid var(--line-2); background:var(--surface); color:var(--blue); border-radius:8px; padding:5px 10px; font-size:12.5px; text-decoration:none; white-space:nowrap; }
+    .ossb-btn:hover { background:var(--soft); }
+    .ossb-btn--dl { background:var(--blue); color:#fff; border-color:var(--blue); }
+    .ossb-btn--dl:hover { background:var(--blue-d); }
+    .ossb-msg { text-align:center; color:var(--muted); padding:22px 10px; font-size:13px; }
+    .ossb-err { color:#b91c1c; }
+    @media (max-width:430px) {
+      .ossb-row { flex-wrap:wrap; gap:4px 10px; }
+      .ossb-name { flex:1 1 100%; }
+      .ossb-act { margin-left:auto; }
+    }
+
     .empty { text-align:center; color:var(--muted); padding:26px 10px; }
     .toast { position:fixed; left:50%; bottom:24px; transform:translateX(-50%); background:#0f172a; color:#fff;
       padding:11px 18px; border-radius:10px; font-size:14px; z-index:60; opacity:0; transition:opacity .2s; pointer-events:none; max-width:90vw; text-align:center; }
@@ -177,6 +213,17 @@
   <main class="wrap" id="app">
     <!-- ===== Upload / queue view ===== -->
     <section id="view-upload">
+      <!-- 云端文件浏览器(只读):实时浏览 OSS 上 records/qc-photo-organizer/ 下的文件夹与文件 -->
+      <section id="oss-panel" class="ossb-panel hide">
+        <div class="ossb-panel__head">
+          <b>云端记录(实时)</b>
+          <span class="sp"></span>
+          <button type="button" class="btn btn--ghost" id="ossb-toggle">展开</button>
+        </div>
+        <p class="ossb-panel__sub">直接浏览云端 records/qc-photo-organizer/ 下的文件夹与文件,可逐层进入、下载、预览图片。</p>
+        <div id="oss-browser" class="ossb-body hide"></div>
+      </section>
+
       <label class="drop" id="drop">
         <input type="file" id="zip-input" accept=".zip,application/zip" multiple class="hide" />
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 13v4a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-4h2v4h10v-4h2ZM13 3v8.17l2.59-2.58L17 10l-5 5-5-5 1.41-1.41L11 11.17V3h2Z"/></svg>
@@ -240,6 +287,6 @@
 
   <script defer src="auth.js?v=2"></script>
   <script defer src="lib/jszip.min.js"></script>
-  <script defer src="boot-supervisor.js?v=5"></script>
+  <script defer src="boot-supervisor.js?v=6"></script>
 </body>
 </html>
