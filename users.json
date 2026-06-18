@@ -14,6 +14,13 @@
       "role": "supervisor",
       "salt": "db473d63",
       "hash": "7240f84e19959177b4269e2040e477c2da46f28eb516013352d5305c6fbe3870"
+    },
+    {
+      "username": "Alina",
+      "name": "Alina",
+      "role": "supervisor",
+      "salt": "5b966547",
+      "hash": "5ae32962b0f50479f22f68a64cadaef896e1daf867b405b22e5b93b6099fe47b"
     }
   ]
 }
