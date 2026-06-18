@@ -21,6 +21,13 @@
       "role": "supervisor",
       "salt": "5b966547",
       "hash": "5ae32962b0f50479f22f68a64cadaef896e1daf867b405b22e5b93b6099fe47b"
+    },
+    {
+      "username": "CML",
+      "name": "CML",
+      "role": "supervisor",
+      "salt": "aebd8418",
+      "hash": "45b872e007c646457e474c9f4007e2c7c748df4432cec9db655943a2a9af4d61"
     }
   ]
 }
