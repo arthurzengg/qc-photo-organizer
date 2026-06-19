@@ -100,7 +100,7 @@
       '.qc-auth-card h2{margin:0 0 4px;font-size:20px;color:#0f172a;}' +
       '.qc-auth-card .sub{margin:0 0 20px;font-size:13px;color:#64748b;}' +
       '.qc-auth-card label{display:block;font-size:13px;color:#475569;margin:14px 0 6px;}' +
-      '.qc-auth-card input{width:100%;padding:11px 13px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:15px;color:#0f172a;background:#fff;}' +
+      '.qc-auth-card input{width:100%;padding:11px 13px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:16px;color:#0f172a;background:#fff;}' +
       '.qc-auth-card input:focus{outline:none;border-color:#1d4ed8;box-shadow:0 0 0 3px #eff6ff;}' +
       '.qc-auth-card .err{min-height:18px;margin:12px 0 0;font-size:13px;color:#dc2626;}' +
       '.qc-auth-card .go{width:100%;margin-top:14px;padding:12px;border:0;border-radius:10px;background:#1d4ed8;color:#fff;font-size:15px;font-weight:600;cursor:pointer;}' +
