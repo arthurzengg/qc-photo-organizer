@@ -69,7 +69,11 @@
     .info-row { font-size:14px; color:#334155; }
     .info-row span { color:var(--muted); }
 
-    .gal-group + .gal-group { margin-top:16px; }
+    /* The gallery container lays the groups out — NOT the thumbnails. Groups sit
+       side-by-side on wide screens and stack on narrow; auto-fit handles 1–4 groups
+       (外部/内部/附件/其他) without media queries. (#rv-gallery must NOT carry .gal,
+       or each group collapses into one 96px thumbnail track and wastes the width.) */
+    #rv-gallery { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:18px 24px; align-items:start; }
     .gal-group__h { font-size:13px; font-weight:700; color:#334155; margin:0 2px 8px; padding-bottom:5px; border-bottom:1px solid var(--line); }
     .gal-group__h span { color:var(--muted); font-weight:600; }
     .gal { display:grid; grid-template-columns:repeat(auto-fill,minmax(96px,1fr)); gap:8px; }
@@ -256,7 +260,7 @@
 
       <div class="card">
         <h2>原始质检照片 <span id="rv-photo-count" style="color:var(--muted);font-weight:400;"></span></h2>
-        <div class="gal" id="rv-gallery"></div>
+        <div id="rv-gallery"></div>
       </div>
 
       <div class="card" id="rv-defect-card" hidden>
