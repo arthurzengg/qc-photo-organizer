@@ -19,6 +19,12 @@
   --shadow-md: 0 8px 24px rgba(15, 23, 42, .14);
   --vv-bottom: 0px;
   --bar-space: 116px; /* reserved height for the fixed action bar */
+  /* Motion: one easing language so transitions feel coherent, not flat.
+     --ease-out = soft settle for things entering/sliding;
+     --ease-soft = gentle curve for color/background fades. */
+  --ease-out: cubic-bezier(.22, .61, .36, 1);
+  --ease-soft: cubic-bezier(.4, 0, .2, 1);
+  --dur: .2s;
 }
 
 * { box-sizing: border-box; }
@@ -251,7 +257,7 @@ main { padding-bottom: var(--bar-space); }
   display: block;
   opacity: 0;
   transform: scale(1.03);
-  transition: opacity .28s ease, transform .28s ease;
+  transition: opacity .28s var(--ease-out), transform .28s var(--ease-out);
 }
 .slot__preview img.is-loaded { opacity: 1; transform: scale(1); }
 
@@ -606,7 +612,10 @@ main { padding-bottom: var(--bar-space); }
   border-top: 1px solid var(--border);
   padding-bottom: env(safe-area-inset-bottom);
   box-shadow: 0 -4px 16px rgba(15, 23, 42, .06);
-  transition: transform .18s ease;
+  transition: transform .22s var(--ease-out);
+  /* Promote to its own compositor layer so the scroll-hide / keyboard slide
+     runs on the GPU without repainting (this bar transforms the most). */
+  will-change: transform;
 }
 .is-keyboard-open .action-bar { transform: translateY(calc(100% + 16px)); }
 /* Auto-hide on scroll (touch): slide the bar away when scrolling down to read,
@@ -668,7 +677,7 @@ main { padding-bottom: var(--bar-space); }
   padding: 11px 20px;
   min-height: 44px;
   cursor: pointer;
-  transition: background .16s ease, transform .12s ease, opacity .16s ease, box-shadow .16s ease;
+  transition: background .16s var(--ease-soft), transform .12s var(--ease-soft), opacity .16s var(--ease-soft), box-shadow .16s var(--ease-soft);
   white-space: nowrap;
 }
 .btn:active { transform: scale(.97); }
@@ -856,7 +865,7 @@ main { padding-bottom: var(--bar-space); }
   border-radius: 18px 18px 0 0;
   display: flex; flex-direction: column;
   overflow: hidden;
-  animation: sheet-up .3s ease;
+  animation: sheet-up .3s var(--ease-out);
   margin-bottom: var(--vv-bottom);
   padding-bottom: env(safe-area-inset-bottom);
 }
@@ -994,7 +1003,7 @@ main { padding-bottom: var(--bar-space); }
   padding: 10px 18px; border-radius: 999px;
   font-size: 14px;
   box-shadow: var(--shadow-md);
-  transition: opacity .25s ease, transform .25s ease;
+  transition: opacity .25s var(--ease-out), transform .25s var(--ease-out);
   pointer-events: none;
   max-width: 90vw; text-align: center;
 }
@@ -1002,7 +1011,7 @@ main { padding-bottom: var(--bar-space); }
 
 /* ===== Subtle slot entrance ===== */
 @media (prefers-reduced-motion: no-preference) {
-  .slot { animation: slot-in .34s ease both; }
+  .slot { animation: slot-in .34s var(--ease-out) both; }
   .slot-grid .slot:nth-child(1) { animation-delay: .02s; }
   .slot-grid .slot:nth-child(2) { animation-delay: .05s; }
   .slot-grid .slot:nth-child(3) { animation-delay: .08s; }
