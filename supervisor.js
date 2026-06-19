@@ -182,6 +182,29 @@
     });
   }
 
+  // 从云端浏览器「导入」一台:解析入队后,直接进入复检页(下一页)。
+  function importFromCloud(file) {
+    showOverlay(true);
+    return loadOneZip(file).then(function (unit) {
+      showOverlay(false);
+      renderQueue();
+      var idx = unit ? state.units.indexOf(unit) : indexOfUnitByFileName(file.name);
+      if (idx >= 0) openReview(idx);          // 新导入 → 直接打开;重复导入 → 定位到已存在的那台
+      else toast('未能解析该 ZIP');
+    }).catch(function (err) {
+      showOverlay(false);
+      console.error('云端导入失败', err);
+      toast('导入失败：' + (err && err.message ? err.message : err));
+    });
+  }
+
+  function indexOfUnitByFileName(name) {
+    for (var i = 0; i < state.units.length; i++) {
+      if (state.units[i].fileName === name) return i;
+    }
+    return -1;
+  }
+
   function loadOneZip(file) {
     return JSZip.loadAsync(file).then(function (zip) {
       var entries = [];
@@ -943,6 +966,7 @@
             region: o.region, bucket: o.bucket,
             accessKeyId: o.readAccessKeyId, accessKeySecret: o.readAccessKeySecret,
             prefix: 'records/qc-photo-organizer/',
+            onImport: importFromCloud,
           });
         } else {
           ctl.resume();
