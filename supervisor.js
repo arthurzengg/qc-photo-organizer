@@ -966,6 +966,7 @@
             region: o.region, bucket: o.bucket,
             accessKeyId: o.readAccessKeyId, accessKeySecret: o.readAccessKeySecret,
             prefix: 'records/qc-photo-organizer/',
+            fileFilter: /\.zip$/i,   // 只显示 .zip(隐藏 .json 等附带文件)
             onImport: importFromCloud,
           });
         } else {

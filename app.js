@@ -120,7 +120,11 @@
     var coarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
     var keyboardOpen = coarse && isEditableActive() && bottom > 120;
     document.documentElement.classList.toggle('is-keyboard-open', keyboardOpen);
-    document.documentElement.style.setProperty('--vv-bottom', (keyboardOpen ? 0 : bottom) + 'px');
+    // The action bar is pinned to bottom:0 and the browser keeps it above iOS's
+    // collapsing toolbar. Feeding the per-scroll viewport gap into --vv-bottom made
+    // it jitter as the toolbar grew/shrank, so keep it at 0; only the
+    // is-keyboard-open class moves the bar (translated out of the way).
+    document.documentElement.style.setProperty('--vv-bottom', '0px');
 
     if (els.actionBar) {
       var h = Math.ceil(els.actionBar.getBoundingClientRect().height);
@@ -1409,8 +1413,10 @@
     document.addEventListener('focusin', scheduleViewportSync);
     document.addEventListener('focusout', function () { setTimeout(scheduleViewportSync, 80); });
     if (window.visualViewport) {
+      // Only react to viewport *resize* (keyboard show/hide). We deliberately do NOT
+      // listen to visualViewport 'scroll' — the bar is pinned to bottom:0, so reacting
+      // to toolbar-collapse scrolls only made it jitter.
       window.visualViewport.addEventListener('resize', scheduleViewportSync);
-      window.visualViewport.addEventListener('scroll', scheduleViewportSync);
     }
 
     

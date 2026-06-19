@@ -595,7 +595,10 @@ main { padding-bottom: var(--bar-space); }
 /* ===== Sticky action bar ===== */
 .action-bar {
   position: fixed;
-  left: 0; right: 0; bottom: var(--vv-bottom);
+  /* Pin to the bottom and let the browser handle iOS's collapsing toolbar.
+     Repositioning it per-scroll-frame from JS (the old bottom:var(--vv-bottom))
+     made it visibly jitter as the toolbar grew/shrank. */
+  left: 0; right: 0; bottom: 0;
   z-index: 40;
   background: rgba(255, 255, 255, .92);
   backdrop-filter: saturate(180%) blur(10px);
