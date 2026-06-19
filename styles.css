@@ -609,6 +609,9 @@ main { padding-bottom: var(--bar-space); }
   transition: transform .18s ease;
 }
 .is-keyboard-open .action-bar { transform: translateY(calc(100% + 16px)); }
+/* Auto-hide on scroll (touch): slide the bar away when scrolling down to read,
+   reveal on scroll up / at the top / at the bottom. Toggled from app.js. */
+.is-bar-hidden .action-bar { transform: translateY(calc(100% + 24px)); }
 .action-bar__inner {
   display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
   gap: 10px 12px;

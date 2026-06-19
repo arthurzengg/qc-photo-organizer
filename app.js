@@ -137,6 +137,40 @@
     viewportSyncRAF = requestAnimationFrame(syncViewportMetrics);
   }
 
+  // ---- Auto-hide the action bar on scroll (touch only) -----------------------
+  // Scrolling DOWN to read slides the bar away; scrolling UP — or resting at the
+  // very top / very bottom — brings it back so the buttons stay reachable. A small
+  // threshold ignores jitter and iOS rubber-banding. Desktop (fine pointer) keeps
+  // the bar always visible.
+  var lastScrollY = 0;
+  var barHideRAF = null;
+  function syncBarVisibility() {
+    barHideRAF = null;
+    var doc = document.documentElement;
+    var coarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+    if (!coarse) { doc.classList.remove('is-bar-hidden'); return; }
+
+    var y = window.pageYOffset || doc.scrollTop || 0;
+    if (y < 0) y = 0;
+    var maxY = (doc.scrollHeight || 0) - window.innerHeight;
+    var atEnds = y <= 8 || (maxY > 0 && y >= maxY - 8);
+    var delta = y - lastScrollY;
+
+    var hide;
+    if (atEnds) hide = false;             // 顶部/底部始终显示
+    else if (delta > 6) hide = true;      // 向下滚动(看内容)→ 收起
+    else if (delta < -6) hide = false;    // 向上滚动 → 露出
+    else hide = doc.classList.contains('is-bar-hidden'); // 微小抖动:维持现状
+
+    // Don't fight the keyboard-open hide; only manage the scroll-driven class.
+    doc.classList.toggle('is-bar-hidden', hide);
+    lastScrollY = y;
+  }
+  function scheduleBarVisibility() {
+    if (barHideRAF !== null) return;
+    barHideRAF = requestAnimationFrame(syncBarVisibility);
+  }
+
   function cardFor(id) {
     return document.querySelector('.slot[data-part-id="' + id + '"]');
   }
@@ -1410,8 +1444,15 @@
 
     window.addEventListener('resize', scheduleViewportSync);
     window.addEventListener('orientationchange', scheduleViewportSync);
+    window.addEventListener('scroll', scheduleBarVisibility, { passive: true });
     document.addEventListener('focusin', scheduleViewportSync);
-    document.addEventListener('focusout', function () { setTimeout(scheduleViewportSync, 80); });
+    document.addEventListener('focusout', function () {
+      // After typing, bring the bar back and re-baseline so the next scroll
+      // direction is measured from here (not a stale pre-keyboard position).
+      document.documentElement.classList.remove('is-bar-hidden');
+      lastScrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
+      setTimeout(scheduleViewportSync, 80);
+    });
     if (window.visualViewport) {
       // Only react to viewport *resize* (keyboard show/hide). We deliberately do NOT
       // listen to visualViewport 'scroll' — the bar is pinned to bottom:0, so reacting
