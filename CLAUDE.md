@@ -9,15 +9,23 @@ phones (iOS Safari/Chrome) and desktops.
 ## Architecture
 
 ```
-index.html ── boot.js ──────► lib/qc-domain.js   shared domain data (contract)
-supervisor.html ─ boot-supervisor.js ─► lib/qc-utils.js    shared pure helpers
+index.html ── js/boot.js ───────► lib/qc-domain.js   shared domain data (contract)
+supervisor.html ─ js/boot-supervisor.js ─► lib/qc-utils.js    shared pure helpers
                               ├► lib/storage-oss.js  OSS backend (presigned PUT + multipart)
                               ├► lib/storage.js      provider dispatch / Supabase fallback
-                              └► app.js | supervisor.js   page logic (IIFE, owns its DOM)
-admin.html + admin.js     read-only records browser (lists OSS uploads)
-auth.js                   login gate for supervisor page (users.json, roles)
+                              └► js/app.js | js/supervisor.js   page logic (IIFE, owns its DOM)
+admin.html + js/admin.js  read-only records browser (lists OSS uploads)
+js/auth.js                login gate for supervisor page (users.json, roles)
 nettest.html              standalone on-device network/upload diagnostics (6 tests)
 ```
+
+**Layout.** HTML entry pages, `users.json`, and platform configs (`netlify.toml`,
+`vercel.json`, `favicon.svg`) stay at the repo root — they are public URLs or
+tooling-anchored. Page scripts live in `js/`, the inspector stylesheet in `css/`,
+shared + vendored modules in `lib/`, and `docs/config.example.js` is a non-loaded
+sample of the OSS config shape. Note: scripts the boot loaders inject resolve
+relative to the *page* (root), so `lib/…` paths stay bare while page scripts carry
+the `js/` prefix (e.g. `js/app.js`).
 
 - **`lib/qc-domain.js`** (`window.QCDomain`) is the single source of truth for
   everything both pages must agree on: the 14 PARTS, ZIP folder names
@@ -51,15 +59,15 @@ nettest.html              standalone on-device network/upload diagnostics (6 tes
 GitHub Pages serves `max-age=600`; phones run stale code without bumps and fixes
 "mysteriously fail" (this caused a real misdiagnosis round). When JS/CSS changes:
 
-1. `boot.js`: bump `var V` (versions app.js + lib/*). `index.html`: bump `boot.js?v=`.
-   `styles.css?v=` only if styles.css changed.
-2. `boot-supervisor.js`: bump `var V` and `supervisor.js?vN` (only if supervisor.js
-   changed). `supervisor.html`: bump `boot-supervisor.js?v=`.
+1. `js/boot.js`: bump `var V` (versions js/app.js + lib/*). `index.html`: bump
+   `js/boot.js?v=`. `css/styles.css?v=` only if styles.css changed.
+2. `js/boot-supervisor.js`: bump `var V` and `js/supervisor.js?vN` (only if
+   supervisor.js changed). `supervisor.html`: bump `js/boot-supervisor.js?v=`.
 3. Merge PRs to `main` — **merging publishes nothing**. Pages is workflow-built and
    the `github-pages` environment only accepts `v*` tag deployments.
 4. `git tag vX.Y.Z && git push origin vX.Y.Z` → release-deploy.yml creates the
    GitHub Release, deploys Netlify prod and GitHub Pages together.
-5. Verify: workflow green; live `boot.js` shows the new `var V`.
+5. Verify: workflow green; live `js/boot.js` shows the new `var V`.
 
 `window.QC_VERSION` (set by both boot loaders) is displayed in the upload-failure
 alert so a device screenshot reveals which version it ran.
