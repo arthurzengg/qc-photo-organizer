@@ -7,7 +7,7 @@
   <meta name="description" content="按 14 个部位拍照存档，一键生成规范命名的文件夹（型号-编号），方便质检溯源。" />
   <title>产品质检拍照整理</title>
   <link rel="icon" href="favicon.svg" type="image/svg+xml" />
-  <link rel="stylesheet" href="styles.css?v=26" />
+  <link rel="stylesheet" href="styles.css?v=27" />
 </head>
 <body>
   <header class="app-header">
@@ -109,6 +109,7 @@
 
   <!-- Sticky bottom action bar -->
   <div class="action-bar" id="action-bar">
+    <p class="action-bar__hint" id="action-hint">请填写产品型号</p>
     <div class="container action-bar__inner">
       <div class="action-bar__status">
         <span class="count-pill">已选 <strong id="count-num">0</strong>/14<span id="count-defect"></span><span id="count-attach"></span></span>
@@ -122,7 +123,6 @@
         <button type="button" class="btn btn--secondary" id="next-btn" hidden>下一台</button>
       </div>
     </div>
-    <p class="action-bar__hint" id="action-hint">请填写产品型号</p>
   </div>
 
   <!-- Generating / success overlay -->

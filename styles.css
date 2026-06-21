@@ -637,7 +637,9 @@ main { padding-bottom: var(--bar-space); }
 .action-bar__actions .btn { min-width: 0; }
 .action-bar__hint {
   margin: 0;
-  padding: 0 clamp(12px, 3vw, 24px) 10px;
+  /* Sits at the TOP of the bar (above the status/action row), so the breathing
+     room goes above the text and the divider-free gap is below it. */
+  padding: 9px clamp(12px, 3vw, 24px) 0;
   max-width: 1100px;
   margin-inline: auto;
   font-size: 12px;
@@ -647,16 +649,19 @@ main { padding-bottom: var(--bar-space); }
 .action-bar__hint[data-tone="warn"] { color: var(--warn); }
 .action-bar__hint[data-tone="ok"] { color: var(--ok); }
 
-/* Phones: the single-row bar overflows (pill + 记录 + 下载 + 下一台 ≈ 500px),
-   so stack it — status line on top, full-width thumb-sized buttons below. */
+/* Phones: keep the status pill (已选 x/14) on the left and the action buttons
+   on the right, on ONE row (space-between handles the split). The pill shrinks
+   with an ellipsis if the counts get long, so the buttons stay on the same line
+   rather than wrapping. The hint sits above the row. */
 @media (max-width: 540px) {
-  :root { --bar-space: 152px; }
-  .action-bar__inner { gap: 6px 10px; padding-block: 8px 6px; }
-  .action-bar__status { flex: 1 1 100%; justify-content: space-between; }
-  .action-bar__actions { flex: 1 1 100%; }
-  .action-bar__actions .btn { flex: 1 1 0; padding-block: 9px; padding-inline: 10px; min-height: 40px; }
+  :root { --bar-space: 118px; }
+  .action-bar__inner { gap: 8px 10px; padding-block: 8px; }
+  .action-bar__status { flex: 0 1 auto; min-width: 0; }
+  .count-pill { flex: 0 1 auto; }
+  .action-bar__actions { flex: 0 0 auto; }
+  .action-bar__actions .btn { padding-block: 9px; padding-inline: 16px; min-height: 40px; min-width: 84px; }
   .action-bar__hint {
-    padding-bottom: 6px;
+    padding-top: 7px;
     line-height: 1.25;
     text-align: center;
   }
