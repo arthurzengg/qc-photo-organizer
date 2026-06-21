@@ -65,17 +65,22 @@ The supervisor page is gated by `auth.js` against `users.json` (salted SHA-256 h
 
 ## File structure
 
+Entry pages stay at the repo root (they are the public URLs); page scripts live
+in `js/`, the inspector stylesheet in `css/`, and shared/vendored modules in `lib/`.
+
 ```
-index.html / app.js / styles.css      inspector page
-supervisor.html / supervisor.js       supervisor page (CSS inline by design)
-boot.js / boot-supervisor.js          config fetch + versioned script loading
+index.html / supervisor.html / admin.html / nettest.html / account-tool.html
+                                      entry pages (public URLs, root-anchored)
+js/app.js / css/styles.css            inspector page logic + styles
+js/supervisor.js                      supervisor page (CSS inline in supervisor.html by design)
+js/boot.js / js/boot-supervisor.js    config fetch + versioned script loading
+js/auth.js / users.json               supervisor login (account-tool.html generates entries)
+js/admin.js                           cloud records browser
 lib/qc-domain.js                      shared domain data (surfaces, checklists, ZIP contract)
 lib/qc-utils.js                       shared pure helpers
 lib/storage-oss.js / lib/storage.js   cloud storage backends (window.QCStorage)
 lib/jszip.min.js / jsqr.min.js / aliyun-oss-sdk.min.js   vendored deps (offline-capable)
-auth.js / users.json / account-tool.html                 supervisor login
-admin.html / admin.js                 cloud records browser
-nettest.html                          upload diagnostics
+docs/config.example.js                sample of the OSS config shape (not loaded; real config on OSS)
 CLAUDE.md                             architecture, extension recipes, release ritual
 ```
 
