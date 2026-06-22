@@ -9,23 +9,29 @@
   <link rel="icon" href="favicon.svg" type="image/svg+xml" />
   <style>
     :root {
-      --blue:#1d4ed8; --blue-d:#1e40af; --soft:#eff6ff; --line:#e5e7eb; --line-2:#cbd5e1;
-      --ink:#0f172a; --muted:#64748b; --bg:#f1f5f9; --surface:#fff;
+      /* Accent + surface tokens aligned with the inspector page (css/styles.css)
+         so the two linked pages share one visual language. */
+      --blue:#2563eb; --blue-d:#1d4ed8; --soft:#eef4ff; --line:#e2e8f0; --line-2:#cbd5e1;
+      --ink:#0f172a; --muted:#64748b; --bg:#f4f6fb; --surface:#fff;
       --ok:#16a34a; --ok-bg:#dcfce7; --bad:#dc2626; --bad-bg:#fee2e2;
+      --shadow-sm:0 1px 2px rgba(15,23,42,.06), 0 1px 3px rgba(15,23,42,.08);
+      --shadow-md:0 8px 24px rgba(15,23,42,.14);
     }
     * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
     a, button, label { touch-action:manipulation; }
     body { margin:0; font:15px/1.5 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif; color:var(--ink); background:var(--bg); }
-    header { background:var(--blue); color:#fff; padding:14px 18px; padding-top:calc(14px + env(safe-area-inset-top)); display:flex; align-items:center; gap:10px; position:sticky; top:0; z-index:10; }
-    header h1 { font-size:17px; margin:0; flex:1; }
-    header a { color:#fff; text-decoration:none; background:rgba(255,255,255,.18); padding:7px 12px; border-radius:8px; font-size:14px; }
+    header { background:linear-gradient(135deg,#2563eb 0%,#1d4ed8 100%); color:#fff; padding:14px 18px; padding-top:calc(14px + env(safe-area-inset-top)); display:flex; align-items:center; gap:10px; position:sticky; top:0; z-index:10; box-shadow:0 2px 12px rgba(29,78,216,.20); }
+    header h1 { font-size:17px; margin:0; flex:1; letter-spacing:.3px; }
+    header a { color:#fff; text-decoration:none; background:rgba(255,255,255,.18); padding:7px 14px; border-radius:999px; font-size:14px; transition:background .16s; }
     header a:hover { background:rgba(255,255,255,.3); }
     .wrap { max-width:760px; margin:0 auto; padding:18px 16px 60px;
       padding-inline:max(16px, env(safe-area-inset-left)) max(16px, env(safe-area-inset-right)); }
 
     .drop { display:flex; flex-direction:column; align-items:center; gap:8px; text-align:center;
-      border:2px dashed var(--line-2); border-radius:14px; padding:30px 18px; background:var(--surface); cursor:pointer; }
+      border:2px dashed var(--line-2); border-radius:14px; padding:30px 18px; background:var(--surface); cursor:pointer;
+      box-shadow:var(--shadow-sm); transition:border-color .18s, background .18s, transform .12s; }
     .drop:hover, .drop.over { border-color:var(--blue); background:var(--soft); }
+    .drop:active { transform:scale(.99); }
     .drop b { font-size:15px; }
     .drop small { color:var(--muted); }
     .drop svg { width:34px; height:34px; fill:var(--blue); opacity:.9; }
@@ -33,8 +39,8 @@
 
     .sec-title { font-size:14px; font-weight:700; color:var(--muted); margin:22px 4px 10px; }
 
-    .unit { background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:13px 14px; margin-bottom:10px;
-      display:flex; align-items:center; gap:12px; }
+    .unit { background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:13px 14px; margin-bottom:10px;
+      display:flex; align-items:center; gap:12px; box-shadow:var(--shadow-sm); }
     /* narrow phones: name/meta on its own line, status + buttons drop below */
     @media (max-width:430px) {
       .unit { flex-wrap:wrap; gap:8px 12px; }
@@ -52,8 +58,10 @@
     .unit__del { border:0; background:transparent; color:#94a3b8; cursor:pointer; font-size:18px; line-height:1; padding:6px; border-radius:8px; }
     .unit__del:hover { background:#fee2e2; color:var(--bad); }
     .btn { appearance:none; border:1.5px solid var(--blue); background:var(--surface); color:var(--blue);
-      border-radius:10px; padding:9px 16px; min-height:42px; font-size:14px; font-weight:600; cursor:pointer; font-family:inherit; white-space:nowrap; }
+      border-radius:10px; padding:9px 16px; min-height:42px; font-size:14px; font-weight:600; cursor:pointer; font-family:inherit; white-space:nowrap;
+      transition:background .16s, transform .12s, box-shadow .16s; }
     .btn:hover { background:var(--soft); }
+    .btn:active { transform:scale(.97); }
     .btn--solid { background:var(--blue); color:#fff; }
     .btn--solid:hover { background:var(--blue-d); }
     .btn--solid:disabled { background:#cbd5e1; border-color:#cbd5e1; cursor:not-allowed; }
@@ -64,7 +72,7 @@
     /* review */
     .rv-head { display:flex; align-items:center; gap:10px; margin-bottom:6px; }
     .rv-back { background:none; border:0; color:var(--blue); font-size:15px; cursor:pointer; padding:6px 2px; font-family:inherit; }
-    .card { background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:15px; margin-bottom:14px; }
+    .card { background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:15px; margin-bottom:14px; box-shadow:var(--shadow-sm); }
     .card h2 { font-size:15px; margin:0 0 12px; }
     .info-row { font-size:14px; color:#334155; }
     .info-row span { color:var(--muted); }
@@ -140,7 +148,7 @@
     .pack.has .pack__box { border-style:solid; border-color:var(--blue); }
 
     /* import summary (汇总：多少台机 / 多少个瑕疵) */
-    .summary { background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:14px 15px; margin-top:14px; }
+    .summary { background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:14px 15px; margin-top:14px; box-shadow:var(--shadow-sm); }
     .summary__stats { display:flex; gap:10px; flex-wrap:wrap; }
     .summary__stat { flex:1; min-width:120px; background:var(--soft); border:1px solid #dbeafe; border-radius:10px; padding:11px 13px; }
     .summary__stat.bad { background:var(--bad-bg); border-color:#fecaca; }
@@ -156,7 +164,7 @@
     .summary__row-count.zero { color:var(--ok); }
 
     /* 云端文件浏览器(只读) */
-    .ossb-panel { background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:12px 14px; margin-bottom:14px; }
+    .ossb-panel { background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:12px 14px; margin-bottom:14px; box-shadow:var(--shadow-sm); }
     .ossb-panel__head { display:flex; align-items:center; gap:10px; }
     .ossb-panel__head b { font-size:14px; }
     .ossb-panel__head .sp { flex:1; }
@@ -294,7 +302,7 @@
   <div class="overlay" id="overlay"><div class="spin"></div></div>
   <div class="toast" id="toast"></div>
 
-  <script defer src="js/auth.js?v=3"></script>
+  <script defer src="js/auth.js?v=4"></script>
   <script defer src="lib/jszip.min.js"></script>
   <script defer src="js/boot-supervisor.js?v=10"></script>
 </body>
