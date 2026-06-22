@@ -190,7 +190,7 @@
     .ossb-row:last-child { border-bottom:0; }
     .ossb-row--dir { cursor:pointer; }
     .ossb-row--dir:hover { background:var(--soft); }
-    .ossb-ic { flex-shrink:0; }
+    .ossb-ic { display:none; }
     .ossb-name { flex:1; min-width:0; word-break:break-all; color:var(--ink); }
     .ossb-meta { flex-shrink:0; font-size:12px; color:var(--muted); white-space:nowrap; }
     .ossb-act { flex-shrink:0; display:inline-flex; gap:6px; align-items:center; color:var(--muted); font-size:12px; }
@@ -204,17 +204,16 @@
     .ossb-msg { text-align:center; color:var(--muted); padding:22px 10px; font-size:13px; }
     .ossb-err { color:#b91c1c; }
     @media (max-width:430px) {
-      /* Compact rows on phones: folders collapse to a single line
-         (📁 + name + 进入 ›); files keep name+size on line 1 and drop the
-         action buttons to a right-aligned second line so the name can breathe. */
-      .ossb-row { flex-wrap:wrap; gap:4px 10px; padding:9px 12px; }
-      .ossb-name { flex:1 1 0%; min-width:0; white-space:nowrap; overflow:hidden;
+      /* Compact rows on phones. Files: the name owns the whole first line so it
+         can breathe; size·date and the action buttons drop together to a second
+         line (size·date left, 预览/导入/下载 right). Folders stay one line. */
+      .ossb-row { flex-wrap:wrap; gap:6px 10px; padding:9px 12px; }
+      .ossb-name { flex:1 1 100%; min-width:0; white-space:nowrap; overflow:hidden;
         text-overflow:ellipsis; word-break:normal; }
       .ossb-act { margin-left:auto; }
-      /* 📁 already conveys 「文件夹」, so the meta is redundant noise on a folder row. */
+      /* Folder rows collapse to a single line: name + 进入 › (meta is redundant). */
+      .ossb-row--dir .ossb-name { flex:1 1 0%; }
       .ossb-row--dir .ossb-meta { display:none; }
-      /* File rows: buttons (预览/导入/下载) get their own right-aligned line. */
-      .ossb-row:not(.ossb-row--dir) .ossb-act { flex:1 1 100%; justify-content:flex-end; }
     }
 
     .empty { text-align:center; color:var(--muted); padding:26px 10px; }
