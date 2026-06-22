@@ -961,6 +961,9 @@
       toggle.textContent = open ? '收起' : '展开';
       if (open) {
         if (!ctl) {
+          // 删除权限:仅 Harry / Arthur 看得到「删除」按钮(服务端再校验口令+白名单)。
+          var sess = (window.QCAuth && window.QCAuth.user) || null;
+          var uname = sess ? String(sess.username || '') : '';
           ctl = window.QCOssBrowser.mount({
             container: bodyEl,
             region: o.region, bucket: o.bucket,
@@ -968,6 +971,9 @@
             prefix: 'records/qc-photo-organizer/',
             fileFilter: /\.zip$/i,   // 只显示 .zip(隐藏 .json 等附带文件)
             onImport: importFromCloud,
+            deleteEndpoint: cfg.deleteEndpoint || o.deleteEndpoint || '',
+            canDelete: /^(harry|arthur)$/i.test(uname),
+            currentUser: uname,
           });
         } else {
           ctl.resume();
