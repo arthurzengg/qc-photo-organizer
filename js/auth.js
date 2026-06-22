@@ -94,18 +94,23 @@
     if (document.getElementById('qc-auth-style')) return;
     var css =
       '#qc-auth-gate{position:fixed;inset:0;z-index:99999;visibility:visible;display:flex;align-items:center;justify-content:center;' +
-        'padding:20px;background:linear-gradient(160deg,#1d4ed8,#1e3a8a);font:15px/1.5 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;}' +
+        'padding:20px;background:linear-gradient(160deg,#2563eb 0%,#1e3a8a 100%);font:15px/1.5 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;}' +
       '#qc-auth-gate *{box-sizing:border-box;visibility:visible;}' +
-      '.qc-auth-card{width:100%;max-width:360px;background:#fff;border-radius:16px;padding:28px 24px;box-shadow:0 20px 50px rgba(0,0,0,.3);}' +
-      '.qc-auth-card h2{margin:0 0 4px;font-size:20px;color:#0f172a;}' +
-      '.qc-auth-card .sub{margin:0 0 20px;font-size:13px;color:#64748b;}' +
+      '.qc-auth-card{width:100%;max-width:360px;background:#fff;border-radius:18px;padding:30px 26px 26px;box-shadow:0 24px 60px rgba(15,23,42,.32);}' +
+      // brand badge: gradient tile + camera glyph, matching the inspector accent
+      '.qc-auth-brand{width:60px;height:60px;margin:0 auto 16px;border-radius:18px;display:flex;align-items:center;justify-content:center;' +
+        'background:linear-gradient(135deg,#2563eb 0%,#1d4ed8 100%);box-shadow:0 8px 20px rgba(37,99,235,.35);}' +
+      '.qc-auth-brand svg{width:32px;height:32px;fill:#fff;}' +
+      '.qc-auth-card h2{margin:0 0 4px;font-size:21px;font-weight:700;color:#0f172a;text-align:center;}' +
+      '.qc-auth-card .sub{margin:0 0 20px;font-size:13px;color:#64748b;text-align:center;}' +
       '.qc-auth-card label{display:block;font-size:13px;color:#475569;margin:14px 0 6px;}' +
-      '.qc-auth-card input{width:100%;padding:11px 13px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:16px;color:#0f172a;background:#fff;}' +
-      '.qc-auth-card input:focus{outline:none;border-color:#1d4ed8;box-shadow:0 0 0 3px #eff6ff;}' +
+      '.qc-auth-card input{width:100%;padding:11px 13px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:16px;color:#0f172a;background:#fff;transition:border-color .16s,box-shadow .16s;}' +
+      '.qc-auth-card input:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 3px #eef4ff;}' +
       '.qc-auth-card .err{min-height:18px;margin:12px 0 0;font-size:13px;color:#dc2626;}' +
-      '.qc-auth-card .go{width:100%;margin-top:14px;padding:12px;border:0;border-radius:10px;background:#1d4ed8;color:#fff;font-size:15px;font-weight:600;cursor:pointer;}' +
-      '.qc-auth-card .go:hover{background:#1e40af;}' +
-      '.qc-auth-card .go:disabled{background:#94a3b8;cursor:not-allowed;}' +
+      '.qc-auth-card .go{width:100%;margin-top:16px;padding:13px;border:0;border-radius:10px;background:#2563eb;color:#fff;font-size:15px;font-weight:600;cursor:pointer;transition:background .16s,transform .12s;}' +
+      '.qc-auth-card .go:hover{background:#1d4ed8;}' +
+      '.qc-auth-card .go:active{transform:scale(.98);}' +
+      '.qc-auth-card .go:disabled{background:#94a3b8;cursor:not-allowed;transform:none;}' +
       '.qc-auth-chip{display:flex;align-items:center;gap:8px;border-radius:999px;padding:5px 6px 5px 12px;' +
         'font:13px/1 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;}' +
       '.qc-auth-chip b{font-weight:600;}' +
@@ -114,13 +119,13 @@
       '.qc-auth-chip--dock{background:rgba(255,255,255,.18);color:#fff;flex-shrink:0;}' +
       '.qc-auth-chip--dock .role{display:none;}' +  // 顶栏已写「主管」，这里不再重复
       '.qc-auth-chip--dock b{display:inline-block;max-width:42vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:bottom;}' +
-      '.qc-auth-chip--dock button{background:rgba(255,255,255,.92);color:#1d4ed8;}' +
+      '.qc-auth-chip--dock button{background:rgba(255,255,255,.92);color:#2563eb;}' +
       '.qc-auth-chip--dock button:hover{background:#fff;}' +
       // floating fallback when the page has no <header>
       '.qc-auth-chip--float{position:fixed;top:8px;right:10px;z-index:50;background:rgba(255,255,255,.92);' +
         'border:1px solid rgba(15,23,42,.08);box-shadow:0 2px 8px rgba(0,0,0,.12);color:#0f172a;}' +
       '.qc-auth-chip--float .role{color:#64748b;}' +
-      '.qc-auth-chip--float button{background:#eef2ff;color:#1d4ed8;}' +
+      '.qc-auth-chip--float button{background:#eef4ff;color:#2563eb;}' +
       '.qc-auth-chip--float button:hover{background:#dbeafe;}';
     var st = document.createElement('style');
     st.id = 'qc-auth-style';
@@ -141,6 +146,9 @@
     var roleCn = ROLES.map(function (r) { return ROLE_CN[r] || r; }).join(' / ');
     gate.innerHTML =
       '<form class="qc-auth-card" id="qc-auth-form" autocomplete="on">' +
+        '<div class="qc-auth-brand" aria-hidden="true">' +
+          '<svg viewBox="0 0 24 24"><path d="M9 3 7.5 5H4a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3.5L15 3H9Zm3 5a5 5 0 1 1 0 10 5 5 0 0 1 0-10Zm0 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z"/></svg>' +
+        '</div>' +
         '<h2>' + esc(PAGE_TITLE) + '</h2>' +
         '<p class="sub">请登录（' + esc(roleCn) + '）</p>' +
         '<label for="qc-auth-user">用户名</label>' +

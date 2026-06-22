@@ -76,6 +76,11 @@ body.modal-open { overflow: hidden; }
   background: linear-gradient(135deg, var(--accent) 0%, var(--accent-d) 100%);
   color: #fff;
   padding-top: env(safe-area-inset-top);
+  /* Subtle elevation so the header lifts off the page; matches the depth the
+     supervisor header now carries (shared visual language). */
+  position: relative;
+  z-index: 1;
+  box-shadow: 0 2px 12px rgba(29, 78, 216, .20);
 }
 .app-header__inner { padding-block: 12px 13px; }
 .app-title {
