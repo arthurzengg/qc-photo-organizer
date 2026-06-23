@@ -3,6 +3,11 @@
   publish = "."
   command = ""
 
+# Serverless functions (e.g. delete-record: server-side OSS delete with the
+# delete key kept as an env secret, never shipped to the browser).
+[functions]
+  directory = "netlify/functions"
+
 # Long-cache the vendored library (its contents change only on a version bump).
 [[headers]]
   for = "/lib/*"
