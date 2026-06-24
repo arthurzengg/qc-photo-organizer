@@ -1206,13 +1206,28 @@
     document.body.classList.remove('modal-open');
   }
 
-  function openScan() {
-    if (typeof jsQR === 'undefined') { showToast('扫码组件未加载，请刷新页面'); return; }
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      showToast('当前浏览器不支持调用相机'); return;
-    }
-    els.scanModal.hidden = false;
-    document.body.classList.add('modal-open');
+  // jsQR (~250KB) loads on demand the first time 扫码 is tapped, so it stays off
+  // every page load. Memoized — the script element is injected at most once;
+  // a failed load clears the promise so the next tap retries.
+  var jsqrLoading = null;
+  function ensureJsQR() {
+    if (typeof jsQR !== 'undefined') return Promise.resolve();
+    if (jsqrLoading) return jsqrLoading;
+    jsqrLoading = new Promise(function (resolve, reject) {
+      var s = document.createElement('script');
+      s.src = 'lib/jsqr.min.js';
+      s.async = true;
+      s.onload = function () {
+        if (typeof jsQR === 'undefined') { jsqrLoading = null; reject(new Error('jsQR 未注册')); }
+        else resolve();
+      };
+      s.onerror = function () { jsqrLoading = null; reject(new Error('脚本加载失败')); };
+      document.head.appendChild(s);
+    });
+    return jsqrLoading;
+  }
+
+  function startScanCamera() {
     els.scanHint.textContent = '正在打开相机…';
     navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false })
       .then(function (stream) {
@@ -1232,6 +1247,25 @@
         showToast(msg);
         setTimeout(stopScan, 1600);
       });
+  }
+
+  function openScan() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      showToast('当前浏览器不支持调用相机'); return;
+    }
+    els.scanModal.hidden = false;
+    document.body.classList.add('modal-open');
+    els.scanHint.textContent = (typeof jsQR === 'undefined') ? '正在加载扫码组件…' : '正在打开相机…';
+    ensureJsQR().then(function () {
+      if (els.scanModal.hidden) return; // user closed the modal while it loaded
+      startScanCamera();
+    }).catch(function (err) {
+      console.error(err);
+      var msg = '扫码组件加载失败，请检查网络后重试';
+      els.scanHint.textContent = msg;
+      showToast(msg);
+      setTimeout(stopScan, 1600);
+    });
   }
 
   function scanLoop() {
