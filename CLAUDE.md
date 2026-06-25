@@ -92,6 +92,8 @@ alert so a device screenshot reveals which version it ran.
 
 - Vanilla ES5-style JS (IIFEs, `var`, no modules/build); match existing style.
 - Issues/commits/PRs in English; UI strings and domain constants stay Chinese.
-- Test before PR: `node --check` on changed JS; for UI, screenshot at phone width
+- Test before PR: `npm test` (dependency-free `node:test` unit + integration suite)
+  and `npm run check` (`node --check` over all JS); for UI, screenshot at phone width
   via `npx playwright screenshot --browser chromium --channel chrome --device "Pixel 5"`
   against `python3 -m http.server` (plain headless Chrome fakes a 500px-min viewport).
+  Test layout and the in-Node browser-module loader live under `test/`.

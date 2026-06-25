@@ -1,0 +1,12 @@
+{
+  "name": "qc-photo-organizer",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Factory QC photo tool — static site. This package.json exists only to run the dependency-free test suite (Node's built-in node:test); the site itself has no build step and ships no node_modules.",
+  "scripts": {
+    "test": "node --test test/unit/*.test.js test/integration/*.test.js",
+    "test:unit": "node --test test/unit/*.test.js",
+    "test:integration": "node --test test/integration/*.test.js",
+    "check": "find js lib netlify test -name '*.js' -print0 | xargs -0 -n1 node --check"
+  }
+}

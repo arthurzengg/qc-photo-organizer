@@ -1,0 +1,27 @@
+name: CI
+
+# Runs on every push to main and every pull request. The site is a no-build
+# static bundle, so CI is just the two gates that catch regressions before a
+# release tag ships them to factory phones: JS syntax + the test suite.
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Syntax-check all JS (node --check)
+        run: npm run check
+
+      - name: Run unit + integration tests
+        run: npm test
