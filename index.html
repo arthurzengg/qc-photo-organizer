@@ -169,9 +169,10 @@
   <!-- Lightweight toast -->
   <div class="toast" id="toast" hidden aria-live="polite"></div>
 
-  <!-- jsqr.min.js is loaded on demand by app.js on first 扫码 tap (see ensureJsQR). -->
+  <!-- jsqr.min.js loads on demand on first 扫码 tap (app.js → ensureJsQR).
+       aliyun-oss-sdk.min.js is intentionally NOT loaded here: uploads sign
+       locally via lib/storage-oss.js presign(). jszip still builds the ZIP. -->
   <script defer src="lib/jszip.min.js"></script>
-  <script defer src="lib/aliyun-oss-sdk.min.js"></script>
-  <script defer src="js/boot.js?v=34"></script>
+  <script defer src="js/boot.js?v=35"></script>
 </body>
 </html>

@@ -7,7 +7,7 @@
 (function () {
   'use strict';
 
-  var V = 'v34';
+  var V = 'v35';
   window.QC_VERSION = V; // 诊断弹窗里显示,确认真机跑的是哪个版本
   var CONFIG_URL = 'https://haoyao-qc-hk.oss-cn-hongkong.aliyuncs.com/public/qc-config.json';
 
