@@ -96,6 +96,17 @@ python3 -m http.server 8000
 
 (Serving over HTTP is recommended; opening `index.html` via `file://` works for the basic flow but camera/QR access requires a secure or localhost origin.)
 
+## Testing
+
+Tests run on Node's built-in runner — no test framework and no `node_modules`, matching the zero-build site:
+
+```bash
+npm test        # unit (lib/qc-domain, lib/qc-utils) + integration (storage layer)
+npm run check   # node --check syntax gate over all JS
+```
+
+The suite loads each `lib/*.js` browser module in Node by injecting a minimal `window`, so the `window.*` namespaces are testable without a DOM. Integration tests drive the storage layer (`storage-oss.js`, `storage.js`) against a mocked `fetch` — covering provider selection, the multipart upload flow, and an independent re-derivation of the OSS presigned-URL signature. `.github/workflows/ci.yml` runs both gates on every push and pull request.
+
 ## Deployment and releases
 
 Merging to `main` publishes nothing. Pushing a version tag is the single release switch:
