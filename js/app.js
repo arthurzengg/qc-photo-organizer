@@ -496,7 +496,7 @@
   function renderTestReport() {
     var list = document.querySelector('[data-test-list]');
     if (!list) return;
-    var compact = window.matchMedia && window.matchMedia('(max-width: 540px)').matches;
+    var compact = compactNow();
     list.innerHTML = TEST_GROUPS.map(function (g, gi) {
       var progress = testGroupProgress(g);
       var rows = g.items.map(function (it) {
@@ -531,27 +531,92 @@
       '</details>';
     }).join('');
     updateTestCount();
-    wireExclusiveGroups(list);
+    wireTestGroups(list);
   }
 
-  // On phones the test-report groups behave as an exclusive accordion: opening one
-  // collapses the others so the long checklist doesn't bury the rest of the form
-  // and the sticky action bar. Desktop keeps independent multi-open. A <details>
-  // 'toggle' event doesn't bubble, so bind per group; the breakpoint is re-checked
-  // at toggle time so a rotate/resize is honoured without re-rendering.
-  function wireExclusiveGroups(list) {
-    var groups = list.querySelectorAll('details[data-test-group]');
-    for (var n = 0; n < groups.length; n++) {
-      (function (d) {
-        d.addEventListener('toggle', function () {
-          if (!d.open) return;
-          if (!(window.matchMedia && window.matchMedia('(max-width: 540px)').matches)) return;
-          for (var i = 0; i < groups.length; i++) {
-            if (groups[i] !== d && groups[i].open) groups[i].open = false;
+  function compactNow() {
+    return !!(window.matchMedia && window.matchMedia('(max-width: 540px)').matches);
+  }
+
+  // Animate only when the browser can and the user hasn't asked for less motion.
+  // Web Animations (element.animate) is the portable height-animation primitive — it
+  // works on iOS Safari 13.4+, unlike the CSS interpolate-size/::details-content combo
+  // which Safari does not support (it silently snaps). No WAAPI / reduced motion ->
+  // groups still open and close, just instantly.
+  function animAllowed() {
+    if (typeof document.createElement('div').animate !== 'function') return false;
+    return !(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  }
+
+  // The test-report groups are an exclusive accordion on phones (opening one collapses
+  // the others so the long checklist doesn't bury the form + sticky action bar) and
+  // independent multi-open on desktop. Each group's expand/collapse is height-animated
+  // via WAAPI; the exclusive-collapse of siblings animates too because it goes through
+  // the same close(). The compact breakpoint is re-checked per interaction so a
+  // rotate/resize is honoured without re-rendering.
+  function wireTestGroups(list) {
+    var nodes = list.querySelectorAll('details[data-test-group]');
+    var ctrls = [], i;
+    for (i = 0; i < nodes.length; i++) ctrls.push(makeGroupCtrl(nodes[i]));
+    for (i = 0; i < ctrls.length; i++) {
+      (function (self) {
+        self.onWillOpen = function () {
+          if (!compactNow()) return; // desktop: keep independent multi-open
+          for (var j = 0; j < ctrls.length; j++) {
+            if (ctrls[j] !== self && ctrls[j].isOpen()) ctrls[j].close();
           }
-        });
-      })(groups[n]);
+        };
+      })(ctrls[i]);
     }
+  }
+
+  // One animated <details>. We drive the toggle ourselves (preventDefault on the
+  // summary click) so the body height can transition; taps during the ~0.2s animation
+  // are ignored so heights are always measured from a settled state. Setting d.open
+  // briefly to read the exact collapsed/expanded offsetHeight causes no paint (it is
+  // synchronous, restored before we yield) and fires no observed side effects.
+  function makeGroupCtrl(d) {
+    var summary = d.querySelector('summary');
+    var anim = null;
+    var ctrl = { onWillOpen: null, isOpen: function () { return d.open; }, close: closeIt };
+
+    function clearInline() { d.style.height = ''; d.style.overflow = ''; }
+
+    function openIt() {
+      if (ctrl.onWillOpen) ctrl.onWillOpen(); // mobile: collapse siblings first
+      if (d.open) return;
+      if (anim) { anim.cancel(); anim = null; }
+      var startH = d.offsetHeight;            // collapsed height (exact)
+      d.open = true;
+      var endH = d.offsetHeight;              // expanded height (exact)
+      if (!animAllowed() || endH <= startH) { clearInline(); return; } // leave it natively open
+      d.style.overflow = 'hidden';
+      d.style.height = startH + 'px';
+      anim = d.animate({ height: [startH + 'px', endH + 'px'] }, { duration: 230, easing: 'ease' });
+      anim.onfinish = anim.oncancel = function () { anim = null; clearInline(); };
+    }
+
+    function closeIt() {
+      if (!d.open) return;
+      var startH = d.offsetHeight;            // current height (exact; partial if reversing)
+      if (anim) { anim.cancel(); anim = null; } // stop a running anim before we measure
+      d.open = false;
+      var endH = d.offsetHeight;              // collapsed height (exact)
+      if (!animAllowed() || startH <= endH) { clearInline(); return; } // leave it natively closed
+      d.open = true;                          // reopen so the collapse stays visible
+      d.style.overflow = 'hidden';
+      d.style.height = startH + 'px';
+      anim = d.animate({ height: [startH + 'px', endH + 'px'] }, { duration: 200, easing: 'ease' });
+      anim.onfinish = anim.oncancel = function () { anim = null; d.open = false; clearInline(); };
+    }
+
+    summary.addEventListener('click', function (e) {
+      e.preventDefault();
+      if (anim) return;                       // settle the in-flight animation first
+      if (d.open) closeIt(); else openIt();
+    });
+
+    return ctrl;
   }
 
   function updateTestCount() {
