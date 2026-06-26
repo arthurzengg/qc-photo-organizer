@@ -531,6 +531,27 @@
       '</details>';
     }).join('');
     updateTestCount();
+    wireExclusiveGroups(list);
+  }
+
+  // On phones the test-report groups behave as an exclusive accordion: opening one
+  // collapses the others so the long checklist doesn't bury the rest of the form
+  // and the sticky action bar. Desktop keeps independent multi-open. A <details>
+  // 'toggle' event doesn't bubble, so bind per group; the breakpoint is re-checked
+  // at toggle time so a rotate/resize is honoured without re-rendering.
+  function wireExclusiveGroups(list) {
+    var groups = list.querySelectorAll('details[data-test-group]');
+    for (var n = 0; n < groups.length; n++) {
+      (function (d) {
+        d.addEventListener('toggle', function () {
+          if (!d.open) return;
+          if (!(window.matchMedia && window.matchMedia('(max-width: 540px)').matches)) return;
+          for (var i = 0; i < groups.length; i++) {
+            if (groups[i] !== d && groups[i].open) groups[i].open = false;
+          }
+        });
+      })(groups[n]);
+    }
   }
 
   function updateTestCount() {
