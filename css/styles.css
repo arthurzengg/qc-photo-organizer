@@ -431,6 +431,7 @@ main { padding-bottom: var(--bar-space); }
   border-radius: var(--radius-sm);
   background: var(--surface);
   overflow: hidden;
+  interpolate-size: allow-keywords; /* lets ::details-content animate block-size to/from auto */
 }
 .test-group__summary {
   display: flex; align-items: center; justify-content: space-between; gap: 10px;
@@ -464,6 +465,21 @@ main { padding-bottom: var(--bar-space); }
 .test-group__body {
   padding: 0 12px 8px;
   border-top: 1px solid var(--border);
+}
+/* Smooth expand/collapse of the group body. ::details-content is the standard hook
+   for a <details> element's slotted content; interpolate-size (on .test-group) lets
+   its block-size animate to/from auto, and allow-discrete keeps the content visible
+   until the collapse finishes. Driven purely by [open], so the phone exclusive-collapse
+   (wireExclusiveGroups sets .open=false) animates too. Browsers without ::details-content
+   support (older iOS) fall back to today's instant toggle; the chevron still animates. */
+@media (prefers-reduced-motion: no-preference) {
+  .test-group::details-content {
+    block-size: 0;
+    overflow: clip;
+    transition: block-size .25s ease, content-visibility .25s;
+    transition-behavior: allow-discrete;
+  }
+  .test-group[open]::details-content { block-size: auto; }
 }
 .test-item {
   display: flex; align-items: center; gap: 10px;
